@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import boto3
 from botocore.exceptions import ClientError
 import requests
+import streamlit as st
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -12,15 +13,15 @@ logger = logging.getLogger(__name__)
 
 class R2Manager:
     def __init__(self):
-        """Initialize R2 manager with credentials from environment variables"""
+        """Initialize R2 manager with credentials from environment variables or Streamlit secrets"""
         # Load environment variables
         load_dotenv()
         
-        # Get credentials
-        self.account_id = os.getenv('CLOUDFLARE_ACCOUNT_ID')
-        self.access_key_id = os.getenv('CLOUDFLARE_ACCESS_KEY_ID')
-        self.secret_access_key = os.getenv('CLOUDFLARE_SECRET_ACCESS_KEY')
-        self.bucket_name = os.getenv('CLOUDFLARE_BUCKET_NAME')
+        # Get credentials from env vars first, fall back to Streamlit secrets
+        self.account_id = os.getenv('CLOUDFLARE_ACCOUNT_ID') or st.secrets.get('CLOUDFLARE_ACCOUNT_ID')
+        self.access_key_id = os.getenv('CLOUDFLARE_ACCESS_KEY_ID') or st.secrets.get('CLOUDFLARE_ACCESS_KEY_ID')
+        self.secret_access_key = os.getenv('CLOUDFLARE_SECRET_ACCESS_KEY') or st.secrets.get('CLOUDFLARE_SECRET_ACCESS_KEY')
+        self.bucket_name = os.getenv('CLOUDFLARE_BUCKET_NAME') or st.secrets.get('CLOUDFLARE_BUCKET_NAME')
         
         # Define storage limit (10GB in bytes)
         self.storage_limit = 10 * 1024 * 1024 * 1024
@@ -28,7 +29,7 @@ class R2Manager:
         # Validate required environment variables
         if not all([self.account_id, self.access_key_id, 
                    self.secret_access_key, self.bucket_name]):
-            raise ValueError("Missing required environment variables")
+            raise ValueError("Missing required credentials. Check environment variables or Streamlit secrets.")
         
         # Initialize R2 client
         self.s3_client = self._initialize_r2_client()

@@ -19,8 +19,11 @@ import urllib.parse
 # Load environment variables
 load_dotenv()
 
-# Initialize Stripe
-stripe.api_key = os.getenv('STRIPE_SECRET_KEY', 'your_test_key_here')
+# Initialize Stripe with API key from env vars or Streamlit secrets
+stripe.api_key = os.getenv('STRIPE_SECRET_KEY') or st.secrets.get('STRIPE_SECRET_KEY', 'your_test_key_here')
+
+# Get base URL from env vars or Streamlit secrets
+BASE_URL = os.getenv('BASE_URL') or st.secrets.get('BASE_URL', 'http://localhost:8501')
 
 class TranscriptSearchSystem:
     def __init__(self, index_path='transcript_search.index', metadata_path='transcript_metadata.pkl'):
@@ -156,8 +159,8 @@ def create_checkout_session(clip_hash, search_state):
                 'quantity': 1,
             }],
             mode='payment',
-            success_url=f"{os.getenv('BASE_URL', 'http://localhost:8501')}?page=download&clip={clip_hash}&state={encoded_state}",
-            cancel_url=f"{os.getenv('BASE_URL', 'http://localhost:8501')}?state={encoded_state}",
+            success_url=f"{BASE_URL}?page=download&clip={clip_hash}&state={encoded_state}",
+            cancel_url=f"{BASE_URL}?state={encoded_state}",
         )
         return checkout_session
     except Exception as e:
