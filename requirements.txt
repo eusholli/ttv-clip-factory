@@ -1,0 +1,15 @@
+pyppeteer
+beautifulsoup4
+yt_dlp
+pytube
+moviepy
+requests
+streamlit
+sentence-transformers
+faiss-cpu
+numpy
+pandas
+python-dotenv
+boto3
+botocore
+stripe

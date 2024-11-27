@@ -1,0 +1,616 @@
+{
+  "processed_urls": [
+    "https://www.telecomtv.com/content/digital-support-systems-summit/deploying-next-gen-oss-and-bss-on-public-cloud-50182/",
+    "https://www.telecomtv.com/content/digital-platforms-services/proximus-on-the-path-to-a-dsp-future-50214/",
+    "https://www.telecomtv.com/content/spotlight-on-5g-partner-insights/enabling-safer-innovation-a-security-first-ai-powered-approach-49960/",
+    "https://www.telecomtv.com/content/telco-as-a-platform-summit/live-q-a-featuring-appledore-research-connectivitree-europe-rakuten-symphony-and-telenor-50014/",
+    "https://www.telecomtv.com/content/telco-as-a-platform-summit/how-apis-and-middleware-can-support-vertical-applications-49999/",
+    "https://www.telecomtv.com/content/spotlight-on-5g-partner-insights/mission-critical-connectivity-for-public-sector-safety-defence-applications-with-private-5g-50064/",
+    "https://www.telecomtv.com/content/network-automation/vodafone-s-mabel-pous-fenollar-on-network-automation-50284/",
+    "https://www.telecomtv.com/content/open-ran-summit/how-open-ran-fits-into-telef-nica-deutschland-s-broader-network-strategy-50365/",
+    "https://www.telecomtv.com/content/spotlight-on-5g-partner-insights/the-benefits-of-adopting-open-ran-architecture-50189/",
+    "https://www.telecomtv.com/content/dsp-leaders-forum/extra-shot-part-6-featuring-appledore-research-and-dell-technologies-50619/",
+    "https://www.telecomtv.com/content/open-ran-summit/what-is-the-future-for-open-ran-50368/",
+    "https://www.telecomtv.com/content/network-automation/how-oss-is-becoming-the-ai-enabled-telco-automation-platform-50720/",
+    "https://www.telecomtv.com/content/spotlight-on-5g-partner-insights/delivering-mobile-financial-services-to-new-markets-with-the-ericsson-wallet-platform-and-hpe-greenlake-flex-solutions-50072/",
+    "https://www.telecomtv.com/content/network-automation/telus-executives-map-out-the-path-from-telco-to-techco-50155/",
+    "https://www.telecomtv.com/content/digital-support-systems-summit/swisscom-s-cloud-native-approach-to-5g-50204/",
+    "https://www.telecomtv.com/content/spotlight-on-5g-partner-insights/how-does-ai-fit-within-the-ran-market-50084/",
+    "https://www.telecomtv.com/content/dsp-leaders-forum/enabling-the-autonomous-network-with-ai-50536/",
+    "https://www.telecomtv.com/content/dsp-leaders-forum/directing-and-accelerating-network-innovation-50535/",
+    "https://www.telecomtv.com/content/spotlight-on-5g-partner-insights/accelerating-the-journey-to-autonomous-networks-in-telecom-50089/",
+    "https://www.telecomtv.com/content/spotlight-on-5g-partner-insights/racing-ahead-tech-mahindra-at-mwc-barcelona-2024-50257/",
+    "https://www.telecomtv.com/content/spotlight-on-5g-partner-insights/security-first-networking-powered-by-ai-50073/",
+    "https://www.telecomtv.com/content/digital-platforms-services/why-telenor-is-building-a-sovereign-cloud-with-aws-50699/",
+    "https://www.telecomtv.com/content/cloud-native/why-telcos-are-transforming-into-techcos-50719/",
+    "https://www.telecomtv.com/content/spotlight-on-5g-partner-insights/hpe-greenlake-flex-solutions-provides-digital-twin-for-the-industrial-metaverse-50018/",
+    "https://www.telecomtv.com/content/digital-platforms-services/how-telco-industry-transformation-can-deliver-growth-50090/",
+    "https://www.telecomtv.com/content/spotlight-on-5g-partner-insights/5g-networks-revolutionising-the-future-50036/",
+    "https://www.telecomtv.com/content/5g/critical-but-often-overlooked-it-s-time-to-talk-antenna-50259/",
+    "https://www.telecomtv.com/content/telcos-and-ai-channel/how-telcos-can-manage-costs-and-deliver-new-revenue-streams-50966/",
+    "https://www.telecomtv.com/content/digital-support-systems-summit/appledore-s-francis-haysom-on-telco-software-trends-50205/",
+    "https://www.telecomtv.com/content/open-ran-summit/the-open-ran-q-a-show-day-two-50364/",
+    "https://www.telecomtv.com/content/dsp-leaders-forum/extra-shot-part-3-featuring-colt-technology-ngmn-alliance-and-wind-river-50615/",
+    "https://www.telecomtv.com/content/dsp-leaders-forum-2024/the-invisible-network-era-enhancing-connectivity-and-performance-in-telecom-50530/",
+    "https://www.telecomtv.com/content/open-ran-summit/the-key-drivers-for-wider-open-ran-adoption-50373/",
+    "https://www.telecomtv.com/content/dsp-leaders-forum/leveraging-telco-cloud-for-advanced-operations-50540/",
+    "https://www.telecomtv.com/content/spotlight-on-5g-partner-insights/enabling-the-cpaas-4-0-era-with-ai-and-programmable-networks-49961/",
+    "https://www.telecomtv.com/content/digital-platforms-services/totogi-s-danielle-royston-on-the-unifying-power-of-ai-50647/",
+    "https://www.telecomtv.com/content/open-ran-summit/the-open-ran-q-a-show-day-one-50363/",
+    "https://www.telecomtv.com/content/dsp-leaders-forum/extra-shot-part-5-featuring-appledore-research-and-pliant-io-ibm-50618/",
+    "https://www.telecomtv.com/content/dsp-leaders-forum/improving-network-optimisation-through-automation-50541/",
+    "https://www.telecomtv.com/content/spotlight-on-5g-partner-insights/the-future-of-telecommunications-with-zte-and-red-hat-49959/",
+    "https://www.telecomtv.com/content/dsp-leaders-forum/extra-shot-part-4-featuring-lewis-insight-50617/",
+    "https://www.telecomtv.com/content/dsp-leaders-forum/creating-cloud-native-software-engineering-teams-50537/",
+    "https://www.telecomtv.com/content/telcos-and-ai-channel/orange-s-vision-on-game-changing-ai-50231/",
+    "https://www.telecomtv.com/content/network-automation/autonomous-core-network-for-a-higher-level-network-stability-50739/",
+    "https://www.telecomtv.com/content/telcos-and-ai-channel/how-ai-can-help-safeguard-businesses-from-cyberattacks-50294/",
+    "https://www.telecomtv.com/content/dsp-leaders-forum/unlocking-platform-opportunities-with-network-apis-50539/",
+    "https://www.telecomtv.com/content/dsp-leaders-forum/focusing-on-the-customer-50542/",
+    "https://www.telecomtv.com/content/open-ran-summit/orange-is-moving-ahead-with-open-ran-50383/",
+    "https://www.telecomtv.com/content/open-ran-summit/advanced-ai-automation-for-open-ran-50387/",
+    "https://www.telecomtv.com/content/spotlight-on-5g-partner-insights/hpe-and-nokia-collaborate-on-edge-to-core-solutions-49940/",
+    "https://www.telecomtv.com/content/network-automation/why-network-and-it-integration-are-key-for-digital-service-providers-50730/",
+    "https://www.telecomtv.com/content/open-ran-summit/sponsor-content-50369/",
+    "https://www.telecomtv.com/content/network-automation/orange-group-cto-on-the-telco-s-progress-with-network-automation-50166/",
+    "https://www.telecomtv.com/content/dsp-leaders-forum/extra-shot-part-8-featuring-guy-daniels-and-ray-le-maistre-telecomtv-50621/",
+    "https://www.telecomtv.com/content/open-ran-summit/brownfield-open-ran-deployment-strategies-50366/",
+    "https://www.telecomtv.com/content/open-ran/the-telus-approach-to-open-ran-50199/",
+    "https://www.telecomtv.com/content/dsp-leaders-forum/extra-shot-part-2-featuring-intel-appledore-research-and-aws-50613/",
+    "https://www.telecomtv.com/content/digital-support-systems-summit/the-digital-support-systems-q-a-show-day-two-50202/",
+    "https://www.telecomtv.com/content/telcos-and-ai-channel/how-tech-mahindra-enables-scale-at-speed-for-telcos-50975/",
+    "https://www.telecomtv.com/content/dsp-leaders-forum/extra-shot-innovation-ecosystems-and-outcomes-50609/",
+    "https://www.telecomtv.com/content/5g/vodafone-uk-s-andrea-don-talks-5g-sa-slicing-open-ran-50178/",
+    "https://www.telecomtv.com/content/telco-as-a-platform-summit/live-q-a-featuring-intel-corporation-and-verizon-business-group-50015/",
+    "https://www.telecomtv.com/content/spotlight-on-5g-partner-insights/qualcomm-ai-is-creating-a-new-generation-of-devices-50034/",
+    "https://www.telecomtv.com/content/5g/gsma-launches-its-5g-connectivity-index-50255/",
+    "https://www.telecomtv.com/content/open-ran-summit/re-evaluating-the-ran-intelligent-controller-50367/",
+    "https://www.telecomtv.com/content/telco-as-a-platform-summit/the-case-for-a-platform-based-approach-to-services-49998/",
+    "https://www.telecomtv.com/content/digital-support-systems-summit/next-generation-oss-and-bss-solutions-50181/",
+    "https://www.telecomtv.com/content/spotlight-on-5g-partner-insights/shape-the-future-of-telecom-with-the-power-of-ai-50238/",
+    "https://www.telecomtv.com/content/network-automation/unveiling-the-power-of-hybrid-cloud-automation-in-telecom-50507/",
+    "https://www.telecomtv.com/content/digital-platforms-services/how-apis-enable-colt-s-network-on-demand-50278/",
+    "https://www.telecomtv.com/content/dsp-leaders-forum/building-digital-infrastructure-from-core-to-edge-50538/",
+    "https://www.telecomtv.com/content/digital-platforms-services/dsp-leaders-council-industry-vision-report-debate-49956/",
+    "https://www.telecomtv.com/content/spotlight-on-5g-partner-insights/wi-fi-7-will-revolutionise-connectivity-as-we-know-it-50035/",
+    "https://www.telecomtv.com/content/dsp-leaders-forum-2024/how-dell-is-helping-telcos-to-ease-their-way-into-the-disaggregated-networking-era-50616/",
+    "https://www.telecomtv.com/content/spotlight-on-5g-partner-insights/navigating-telcos-transition-to-5g-49973/",
+    "https://www.telecomtv.com/content/digital-platforms-services/why-bt-digital-is-developing-a-single-data-fabric-50708/",
+    "https://www.telecomtv.com/content/dsp-leaders-forum-2024/the-aws-vision-for-telecom-network-innovation-and-new-revenue-streams-50528/",
+    "https://www.telecomtv.com/content/spotlight-on-5g-partner-insights/wind-river-vodafone-very-excited-about-open-ran-deployment-in-europe-49939/",
+    "https://www.telecomtv.com/content/dsp-leaders-forum-2024/intel-s-transformation-roadmap-sustainability-ai-and-ecosystem-collaboration-50529/",
+    "https://www.telecomtv.com/content/spotlight-on-5g-partner-insights/the-state-of-open-ran-and-sustainability-in-the-ran-50074/",
+    "https://www.telecomtv.com/content/dsp-leaders-forum/extra-shot-part-7-featuring-telef-nica-50620/",
+    "https://www.telecomtv.com/content/telcos-and-ai-channel/partnerships-are-key-to-genai-success-50695/",
+    "https://www.telecomtv.com/content/telco-as-a-platform-summit/the-gsma-open-gateway-initiative-50011/"
+  ],
+  "speakers": [
+    "Nastasi Karaiskos",
+    "Diego R. Lopez",
+    "Sandeep Sharma",
+    "VT-Robert Curran",
+    "Darrell Jordan-Smith",
+    "Andy Tiller",
+    "Robert Prince",
+    "Sarwar Khan",
+    "Audience-Francis Haysom",
+    "Peter Arbitter",
+    "Mark Duesener",
+    "VT-Beth Cohen",
+    "Greg McCall",
+    "Fernando Camacho",
+    "Komal Aggarwal",
+    "Andrea Dona",
+    "Neil McRae",
+    "Tony Poulos",
+    "Jose Antonio Martin Martinez",
+    "Mark Gilmour",
+    "Sadayuki Abeta",
+    "Stefano Cocco",
+    "Jason Hogg",
+    "Ishwar Parulkar",
+    "Juan Manuel Caro",
+    "Gabriela Styf Sj\u00f6man",
+    "Enrique Blanco",
+    "Amir Mehmood",
+    "Richard MacKenzie",
+    "Adnan Saleem",
+    "Rahul Atri",
+    "Abhishek Shankar",
+    "Tammy Whyman",
+    "Andrew Coward",
+    "Hugh Crean",
+    "Werner Schaefer",
+    "Hasan Jafri",
+    "Eduardo Guti\u00e9rrez",
+    "Dennis Hoffman",
+    "Adam Kennedy",
+    "Munish Chhabra",
+    "Israel Madiedo",
+    "Francis Haysom",
+    "Rick Mostaert",
+    "Cristina Rodriguez",
+    "Sandeep Raithatha",
+    "Fabio Cerone",
+    "Ahmed Hafez",
+    "Danielle Rios Royston",
+    "Philippe Rase",
+    "Alex Foster",
+    "Juanma Canabal Mu\u00f1oz",
+    "Clarence Reynolds",
+    "Audience-Alfredo Musitani",
+    "Lee Myall",
+    "Dafna Yanay",
+    "Martyn Warwick",
+    "Enrico Salvatori",
+    "Paul Miller",
+    "Diego R Lopez",
+    "Ray Le Maistre",
+    "Harpinder Matharu",
+    "Geoff Hollingworth",
+    "Madhukiran Medithe",
+    "Soumava Dutta",
+    "Alexandra Foster",
+    "VT-Lingli Deng",
+    "Jeroen Verbruggen",
+    "Richard MacKensie",
+    "Robert Curran",
+    "Oded Shihor",
+    "Luis Velarde Tazon",
+    "VT-Alex Sinclair",
+    "Mallik Rao",
+    "Diego Lopez",
+    "Harshvendra Soin",
+    "Pavan Bachwal",
+    "Dean Dennis",
+    "Eugina Jordan",
+    "Raj Yavatkar",
+    "Charlotte Kan",
+    "Jose Arias",
+    "Sushil Rawat",
+    "Akira Tada",
+    "Richard Barrett",
+    "Azhar Sayeed",
+    "Petr L\u00e9dl",
+    "Manish Mangal",
+    "Mohit Joshi",
+    "Cormac Whelan",
+    "Nico Marziliano",
+    "Usman Javaid",
+    "Michele Campriani",
+    "Petr Ledl",
+    "Ben Panic",
+    "Colin Bannon",
+    "Max Gasparroni",
+    "Petar Torre",
+    "Manish Singh",
+    "Campbell McLean",
+    "Tony Geheran",
+    "Anita D\u00f6hler",
+    "Tom Burton",
+    "Lingli Deng",
+    "I Gusti Panca",
+    "John Abraham",
+    "Franz Seiser",
+    "Guy Daniels",
+    "Ian Hood",
+    "Laurent Laboucher",
+    "Abdu Mudesir",
+    "Wei Yeang Toh",
+    "Ashish Jain",
+    "Paco Pignatelli",
+    "VT-Terje Jensen",
+    "Thomas Barnett",
+    "Juan Carlos Garcia",
+    "Sandeep Phadke",
+    "Amith Maharaj",
+    "Atoosa Hatefi",
+    "Jaime Tatis",
+    "Dr Joan Triay",
+    "Patrick Lopez",
+    "Scott Calzia",
+    "Tomek Gerszberg",
+    "Laurent Leboucher",
+    "Kevin Nethercott",
+    "Joy King",
+    "Mojdeh Amani",
+    "Terje Jensen",
+    "Matteo Fiorani",
+    "Chivas Nambiar",
+    "Fahim Sabir",
+    "Harkirit Singh",
+    "Al Balasco",
+    "Amol Phadke",
+    "Susan James",
+    "Mirko Voltolini",
+    "Kalvin Bahia",
+    "Phillip Larbey",
+    "Chris Lewis",
+    "Faiq Khan",
+    "VT-Andy Tiller",
+    "Geetha Ram",
+    "Laura Murphy",
+    "Alfredo Musitani",
+    "Vivek Chadha",
+    "Alex Sinclair",
+    "Matthias Fridstrom",
+    "VT-John Abraham",
+    "Yani Boyadzhieva",
+    "Beth Cohen",
+    "John Baker",
+    "Aleksis Anterow",
+    "Nik Willets",
+    "Nazim Benhadid",
+    "Wang Quan",
+    "Mabel Pous-Fenollar",
+    "Francesca Serravalle",
+    "Vishal Mathur",
+    "Ra\u00fal Casta\u00f1\u00f3n",
+    "Mark Henry",
+    "Yanitsa Boyadzhieva",
+    "Philippe Ensarguet",
+    "Yago Tenorio",
+    "Randy Cox"
+  ],
+  "companies": {
+    "TelecomTV": [
+      "Guy Daniels",
+      "Ray Le Maistre",
+      "Clarence Reynolds",
+      "Charlotte Kan",
+      "Tony Poulos",
+      "Petr L\u00e9dl",
+      "Yanitsa Boyadzhieva",
+      "Martyn Warwick",
+      "Yani Boyadzhieva"
+    ],
+    "Rakuten Symphony": [
+      "Nastasi Karaiskos",
+      "Geoff Hollingworth",
+      "Faiq Khan",
+      "Vivek Chadha",
+      "Rahul Atri"
+    ],
+    "Connectivitree": [
+      "Mark Gilmour"
+    ],
+    "Telenor": [
+      "Terje Jensen",
+      "Amol Phadke"
+    ],
+    "Vodafone": [
+      "Komal Aggarwal",
+      "Andrea Dona",
+      "Juanma Canabal Mu\u00f1oz",
+      "Mabel Pous-Fenollar",
+      "Yago Tenorio"
+    ],
+    "Docomo Euro-Labs": [
+      "Dr Joan Triay"
+    ],
+    "BT": [
+      "Mojdeh Amani",
+      "Alex Foster",
+      "Sarwar Khan",
+      "Gabriela Styf Sj\u00f6man",
+      "Richard MacKenzie",
+      "Mark Henry",
+      "Richard MacKensie"
+    ],
+    "American Tower": [
+      "Susan James"
+    ],
+    "Dell Technologies": [
+      "Soumava Dutta",
+      "Manish Singh",
+      "Cormac Whelan",
+      "Dennis Hoffman"
+    ],
+    "AWS": [
+      "Chivas Nambiar",
+      "Ishwar Parulkar",
+      "Fabio Cerone",
+      "Dafna Yanay",
+      "Tammy Whyman"
+    ],
+    "VMO2 Business": [
+      "Sandeep Raithatha"
+    ],
+    "Deutsche Telekom": [
+      "Peter Arbitter",
+      "Abdu Mudesir",
+      "Petr Ledl",
+      "Ahmed Hafez"
+    ],
+    "Telefonica": [
+      "Luis Velarde Tazon",
+      "Mallik Rao",
+      "Diego Lopez",
+      "Juan Manuel Caro",
+      "Enrique Blanco",
+      "Jose Antonio Martin Martinez"
+    ],
+    "SoftBank": [
+      "Akira Tada"
+    ],
+    "TM Forum": [
+      "Nik Willets",
+      "Andy Tiller"
+    ],
+    "Rakuten Mobile": [
+      "Madhukiran Medithe"
+    ],
+    "Appledore Research": [
+      "Robert Curran",
+      "John Abraham",
+      "Francis Haysom"
+    ],
+    "NGMN Alliance": [
+      "Anita D\u00f6hler"
+    ],
+    "Arelion": [
+      "Matthias Fridstrom"
+    ],
+    "Deutsche Telekom Technik": [
+      "Franz Seiser"
+    ],
+    "TELUS": [
+      "Tony Geheran",
+      "Hasan Jafri",
+      "Nazim Benhadid",
+      "Jaime Tatis",
+      "Sushil Rawat"
+    ],
+    "Orange": [
+      "Usman Javaid",
+      "Philippe Ensarguet",
+      "Atoosa Hatefi"
+    ],
+    "BT Business": [
+      "Colin Bannon"
+    ],
+    "Juniper Networks": [
+      "Raj Yavatkar",
+      "Neil McRae"
+    ],
+    "Telecom Argentina": [
+      "Alfredo Musitani"
+    ],
+    "Colt Technology": [
+      "Mirko Voltolini"
+    ],
+    "BT Group": [
+      "Greg McCall",
+      "Laura Murphy"
+    ],
+    "MTN": [
+      "Amith Maharaj"
+    ],
+    "Vodafone UK": [
+      "Francesca Serravalle"
+    ],
+    "Verizon Business": [
+      "Beth Cohen",
+      "Dean Dennis"
+    ],
+    "Wind River": [
+      "Darrell Jordan-Smith",
+      "Paul Miller",
+      "Randy Cox",
+      "Nico Marziliano"
+    ],
+    "Cambridge Management Consulting": [
+      "Tom Burton"
+    ],
+    "GSMA": [
+      "Alex Sinclair"
+    ],
+    "Unknown": [
+      "Paco Pignatelli",
+      "VT-Terje Jensen",
+      "Thomas Barnett",
+      "VT-Robert Curran",
+      "Philippe Rase",
+      "Audience-Alfredo Musitani",
+      "Audience-Francis Haysom",
+      "Paul Miller",
+      "VT-Beth Cohen",
+      "Ray Le Maistre",
+      "VT-Lingli Deng",
+      "Ben Panic",
+      "VT-Alex Sinclair",
+      "VT-Andy Tiller",
+      "VT-John Abraham",
+      "Eduardo Guti\u00e9rrez",
+      "Israel Madiedo",
+      "Charlotte Kan",
+      "Wang Quan"
+    ],
+    "Orange Innovation": [
+      "Laurent Leboucher"
+    ],
+    "Neos Networks": [
+      "Lee Myall"
+    ],
+    "Liberty Global": [
+      "Max Gasparroni"
+    ],
+    "Ascend Digital Solutions": [
+      "Harkirit Singh"
+    ],
+    "IBM": [
+      "Andrew Coward"
+    ],
+    "Optiva": [
+      "Joy King",
+      "Amir Mehmood",
+      "Michele Campriani"
+    ],
+    "Telecom Infra Project": [
+      "Eugina Jordan",
+      "Vishal Mathur"
+    ],
+    "Telef\u00f3nica": [
+      "Diego R Lopez"
+    ],
+    "NTT DOCOMO": [
+      "Sadayuki Abeta"
+    ],
+    "DSP Leaders Councillor": [
+      "Alexandra Foster"
+    ],
+    "Lewis Insight": [
+      "Chris Lewis"
+    ],
+    "Tech Mahindra": [
+      "Manish Mangal",
+      "Mohit Joshi",
+      "Sandeep Sharma",
+      "Sandeep Phadke",
+      "Harshvendra Soin",
+      "Abhishek Shankar"
+    ],
+    "Independent": [
+      "Juan Carlos Garcia"
+    ],
+    "Telkomsel": [
+      "I Gusti Panca"
+    ],
+    "Huawei": [
+      "Fernando Camacho"
+    ],
+    "BT Digital": [
+      "Campbell McLean"
+    ],
+    "Totogi": [
+      "Danielle Rios Royston"
+    ],
+    "Intel Corporation": [
+      "Werner Schaefer",
+      "Robert Prince",
+      "Cristina Rodriguez",
+      "Petar Torre",
+      "Wei Yeang Toh"
+    ],
+    "ConnectiviTree": [
+      "Mark Gilmour"
+    ],
+    "Intel": [
+      "Petar Torre",
+      "Cristina Rodriguez"
+    ],
+    "Red Hat": [
+      "Ian Hood",
+      "Azhar Sayeed"
+    ],
+    "Core Analysis": [
+      "Patrick Lopez"
+    ],
+    "Verizon": [
+      "Phillip Larbey",
+      "Beth Cohen"
+    ],
+    "Ericsson": [
+      "Pavan Bachwal",
+      "Matteo Fiorani"
+    ],
+    "Telefonica Deutschland": [
+      "Mallik Rao"
+    ],
+    "Mavenir": [
+      "Rick Mostaert",
+      "John Baker"
+    ],
+    "Telus": [
+      "Sushil Rawat"
+    ],
+    "Colt Technology Services Ltd": [
+      "Fahim Sabir"
+    ],
+    "Huawei Antenna": [
+      "Aleksis Anterow"
+    ],
+    "GSMAi": [
+      "Kalvin Bahia"
+    ],
+    "Three Ireland": [
+      "Hugh Crean"
+    ],
+    "Microsoft": [
+      "Jason Hogg"
+    ],
+    "China Mobile/ETSI": [
+      "Lingli Deng"
+    ],
+    "Swisscom": [
+      "Mark Duesener"
+    ],
+    "Orange Innovation Networks": [
+      "Laurent Laboucher"
+    ],
+    "AMD": [
+      "Harpinder Matharu"
+    ],
+    "HPE Aruba Networking": [
+      "Adam Kennedy"
+    ],
+    "HPE": [
+      "Oded Shihor",
+      "Geetha Ram"
+    ],
+    "Verizon Business Group": [
+      "Beth Cohen"
+    ],
+    "Radisys:<br>Good afternoon everyone. I know this is post-lunch session, but we'll keep it interactive, so keep everyone awake. Yeah. Okay. Welcome everyone here. I'm joined by three speakers. We have Jim Estes, CEO, Dense Air. He has 35 plus years of experience in multiple roles in telecommunication industries industry, right from building products to deploying product now and changing the word from how the infrastructure is deployed. Today we have Vinay Ravuri, founder and CEO of EdgeQ Inc. Again, Vinay has played critical roles in companies like Qualcomm and is now changing the way SOC is looked at it and also joined by Arun Bhikshesvaran, CEO of Radisys and he's responsible for executing Radisys strategy in terms of transforming the telecom industry. Again, Arun has played multiple roles previously with Ericsson to welcome everyone. We'll go over a few important questions, which I think everybody has their mind and then we'll open up the floor for questions for everybody. Alright, so starting with, I'm sure this is everybody's thinking where 5G is expected to play critical role from evolutionary and revolutionary capabilities in wireless networks. So we look at how this panel symbolizes with the revolutionary nature of 5G networks. Starting with this, I would say Jim, maybe if you want to start with how does your approach to bridging the infrastructure with cloud networks changes the traditional network deployments?<br><br>Jim Estes, Dense Air:<br>Thank you. Well, the great thing about this architecture with open Ran is that we're able to lever a lot of really talented partners and bring it all together in a pretty amazing 5G solution. We really have looked at this as a way I view it as, I call it Tower 2.0. You think of the tower model in the early days was very, no one wanted to do it and now it's commonplace and we're now at the next inflection point, which is really to share the active infrastructure and this is what the architecture enables. We can actually have multiple operators operating on the same radios and sharing that to get the best efficiency and economies of scale like in the tower model, except we're doing it with the base stations<br><br>Munish Chhabra, Radisys:<br>Thank you Jim. And Arun, maybe if you want to share your views, especially with your experience with Ericsson, how is 5G changing the way how the networks deployed today versus traditional networks?<br><br>Arun Bhikshesvaran, Radisys:<br>Yeah, I think that's a good question. Munish, like we were talking about a little bit earlier this morning, every generation of wireless has been deployed basically for the same use case, which is people talking or watching YouTube videos maybe, right? And I think what we want see in what the industry wants to see in 5G is a very different way of monetization, but also very different way of serving multiple use cases. At the end of the day, not everybody is driving a German car and all cities are not consisting only of highways. There are speed and B lanes. And so you've got to have diversity in the way you do things, and that is the beauty of the partnership that we have on stage. You've got a new silicon vendor, a new way of deploying networks that makes it accessible to multiple people and the role of software coming in and everything working together underpinned by the cloud and that is very, very different from what any other generation has achieved in the past. I think that's the beauty of the, whether you want to add something.<br><br>Vinay Ravuri, EdgeQ Inc:<br>You said it really well. 5G is very different from 4G, I call the evolutionary part of 5G is like 4.9 G, more bandwidth and all that. But the revolutionary part is to enable new use cases beyond the phone. Phone is one modality. You have cars as Aaron just mentioned, and there are more to come and this is also a step towards six G that's also there. So I do think that even though the revolutionary part of 5G is not seen today, but it is an evolution of these things, it takes time, but it's just going to be the non phone that enables these use cases.<br><br>Munish Chhabra, Radisys:<br>Thank you gentlemen. I think this was very insightful. Let's go over to the next topic, which is about the scalability of the solution that we are talking about here, especially with respect to using cloud native environment and in this particular case they're using GCP. So maybe Arun, if you want to start with how Radisys is enabling cloud infrastructure through 5G ran application.<br><br>Arun Bhikshesvaran, Radisys:<br>So absolutely. I see the basic premise of being able to run ran software in the cloud is something that we are giving true meaning to. Other people talk about doing it, but they're mostly doing it in private clouds inside telco environments, what we are bringing together is a true public cloud deployment and that is massive. And you talked about GCP, there is also a component of GDC on the distributed cloud, right? So when you start to put the DU closer to in the GDC to close up deployment and having the CU run in the central cloud more from a GCP perspective, that simple capability sounds simple, but you got to open up the interface and make sure everything works in a very structured manner. And that is only the first step because then after that you can separate the CU into a control on a user plane and start to build cardinality in a very different manner.<br><br>And that is how you start supporting multiple cells and then you get auto scaling and everything. Now if you are a traditional OEM, you have to think about feature parody and how you take your current code base and you start to modernize it. But because we start from a different level, all this comes to us natively, we think about it and start to go implement it without any baggage behind us. I think that is a huge plus and I think it's great that Jim and Dense Air is going to take it out into the market and create a showcase that other people will actually learn from.<br><br>Munish Chhabra, Radisys:<br>Exactly. So my next question, Jim, is for you that how are using GCP helps both in terms of scaling but still ensuring the security and reliability in the shared network infrastructure?<br><br>Jim Estes, Dense Air:<br>Thank you. Just to build on what Arun said, the great thing about working with GCP is I as operator of this network don't need to be in the server business. I don't want to own a bunch of bare metal servers and have to maintain them and all the transport and associated costs. So GCP has a global reach, we're levering that we can take advantage of their scale and all the security features that they've implemented in the cloud. But then now I just have to basically attach the radio to the cloud and so the DU and the CU are running the cloud and ability to deploy rapidly is massively extended beyond having to deploy bare metal server. So it's a very exciting opportunity.<br><br>Munish Chhabra, Radisys:<br>And maybe Vinay if you can also talk about how does the cloud environment or cloud native applications throw challenges on the SOC?<br><br>Vinay Ravuri, EdgeQ Inc:<br>Yeah, there are many. Well first thing is just to reiterate what Arun and Jim just said. The benefits are that economies of scale that you and the know-how that comes from other applications can be adopted. So hence it's a more efficient network. A lot of the software could be reused. So there's a lot of value in not reinventing the wheel all over again, which cellular industry has done too many times. So this is a good way to go. Now everything eventually has to run on hardware and chips. So when you run something in the cloud, you try to make it as general purpose as possible because you want to run different applications, not just one thing but many things. So that creates an interesting challenge for a silicon vendor like ours because on one end you want to be very cost efficient, very power efficient.<br><br>On the other end you want to be general purpose. These are vectors that pull against each other. So that's the challenge and that's why I exist as a company because that's also the opportunity and traditionally this is not how things have been done. So this is the way HQ was started is that how do we run cloud native applications or take things like containerization Linux, which is a very common thing. How do you run it efficiently in a modem or in a RU or a du? And that's the model that we built. If you look at the traditional approaches, that's not how they've done and that's also the challenge for us, but there's many more coming because cloud continues to evolve, which means chips that go in it have to evolve as well.<br><br>Munish Chhabra, Radisys:<br>So continuing to actually on that topic, especially the advancement which is happening in the 5G area. From SOC point of view, how is your approach of base station on a chip changes the evolution for the current solution and especially help dense air in the solution which is being discussed here?<br><br>Vinay Ravuri, EdgeQ Inc:<br>Dense Air should say what they like, but we are thankful for the partnership with Sair and Redis. So the thing that our customers see in HQ is that we kind of did a clean slate approach. We didn't do this based on our previous generation because we didn't have a previous generation first thing. Second thing is we looked at the industry and said, okay, what is the best of breed that I can adopt rather than reinvent? Okay, so further the modem or the communication part, we took risk five. Instead of reinventing that world ourselves, which a lot of modem companies do, we decided not to do that. So there's some goodness that comes with it, but at the same time, there's software that's out there that has to run on top of our silicon, which needs ecosystem to be there and things like risk five doesn't really have a great ecosystem, so we put arm on top of that modem, which is inside the ship.<br><br>So these are decisions we had to make. Now in 2018, this looked really strange to everyone like mixing two different technologies and this looks more like a computer than it looks like a modem today, five years later people say, oh, well that was such a good idea. It's like you are far ahead. Honestly, it was an obvious idea. The industry just needs to adopt what's there.<br><br>Munish Chhabra, Radisys:<br>So Jim, to you, how in terms of using HQ as a SOC of choice helps you in terms of developing the solution faster and especially as part of your small cell?<br><br>Jim Estes, Dense Air:<br>Yeah, thank you. Just to build on what Vinay said, one of the big things is a significant reduction in cost. So I can build all of this on one chip rather than have as many as four or five more chips to do the same thing. The second thing is is that I have a radio that I can do multiple bands and functions all on the same one. So I can do CBRS, I can do C-band and I can do band 41 all on the same chip set. So now I can provide a R ru both indoor and outdoor. This supports both licensed and unlicensed spectrum all in one radio. It's a pretty dramatic savings because we can share the fronthaul on that as well.<br><br>Munish Chhabra, Radisys:<br>Thank you. Arun, back to you. How does it impact the RAN implementation or architecture given that you have more capacity available right on the SOC?<br><br>Arun Bhikshesvaran, Radisys:<br>Yeah, I was just going to talk about that, Jim. We went and met with Vinay's engineering team at Bangalore over a weekend and on a Saturday morning they opened up the office for us and suddenly, I don't think they were expecting this big crew coming from Radisys and when we told people that we were going to go meet with EdgeQ, there were more people who wanted to join us. So we all went into this conference room and we started asking all these questions as to how does this really work, blah, blah blah. And then your head of engineering Hari says, look, hang on for a second, and he brings out a tray that has just come from the factory with all the chip sets and he says, look, this is what it is.<br><br>This is real. It is dramatic. When you think about what a base station on a chip actually looks like and what you said vinne about having the arm cores and the disc five architecture running our software with all the experience that we have, compressing it, running in four cores, et cetera, you put everything on one deck. The cost reduction that you get in terms of having a highly efficient design, this is revolutionary for us because we know how to run it on 20 cores and 32 cores, but when you start to say, Hey, everything that you have designed is here in one chip, I think that is groundbreaking. It's a new frontier for us.<br><br>Munish Chhabra, Radisys:<br>Absolutely. I think this not only impacts in general the densair solution but also the industry overall in terms of bringing the cause down, especially for small cell. So coming back to Vinay in terms of the current solution that we are discussing, I'm sure and this audience would have questions about split six versus split 7.2. So why split six is more effective here compared to 7.2, which is more popular?<br><br>Vinay Ravuri, EdgeQ Inc:<br>In open ran? For those that don't know, there are different splits that you can split a base station 7.2 implements the physical layer in the RU and then the upper PI is done in a DU as it's called, and in split six with the entire PI is implemented in one place and then you aggregate a bunch of these things into a single deal. So architecturally and dense air does that, and our silicon is flexible. It could be cut in any way, but it does have a lot of advantages when you do the split six this way because the fronthaul bandwidth gets greatly reduced when you process the whole file. What people don't understand is when you are, let's say downloading something, let's say you're downloading like 100 megabits per second, hypothetically the bits that go in the air is not a hundred megabits per second.<br><br>It's almost like base 700 megabits to a gigabit per second if it include the number of antennas and include all these things. But so when you have fronthaul where you have to transport these bits, it becomes expensive. So that's like almost a tax that you have to pay. So doing more of the radio processing if you will, or the base band as it's called upfront, it essentially reduces the cost of deployment but also architecturally opens up new application.<br><br>Munish Chhabra, Radisys:<br>Yeah, Jim, so how has this helped see from a solution point of view and what were the choices that you had to make between the two?<br><br>Jim Estes, DenseAir:<br>Thank you. Split six is a big opportunity as an operator of a network. So we denair build, owns, operates these networks as a neutral host and we then provide capacity as they need it to different operators both on the enterprise side and on the carrier side with split six, I don't need to use dark fiber out to all of it, so that saves a lot of money. Also, the latency of tolerance is much more flexible, so that allows me to actually run longer runs without having to optimize a network around latency in indoor. The interesting thing about that is you can many times use existing IT cabling and be able to do the front haul. Then split six allows you to do that. If you were doing 7.2 you would have to haul fiber everywhere or so it's a big cost savings really drives down our unit cost. That's great,<br><br>Munish Chhabra, Radisys:<br>Thank you. Jim. Arun, back to you as Radisys is, you have seen both 7.2 evolution work with so many different radios on fronthaul and now split six options with small sales. Which do you think suits better from Radius's architecture or even for this particular use case around cloud?<br><br>Arun Bhikshesvaran, Radisys": [
+      "Munish Chhabra"
+    ],
+    "Qualcomm": [
+      "Enrico Salvatori"
+    ],
+    "Hewlett Packard Enterprise": [
+      "Richard Barrett",
+      "Jose Arias"
+    ],
+    "Proximus": [
+      "Jeroen Verbruggen"
+    ],
+    "Axiata Group Future Networks": [
+      "Tomek Gerszberg"
+    ],
+    "Athonet": [
+      "Stefano Cocco"
+    ],
+    "Radisys": [
+      "Adnan Saleem",
+      "Al Balasco",
+      "Ashish Jain"
+    ],
+    "S&P Global Market Intelligence": [
+      "Ra\u00fal Casta\u00f1\u00f3n"
+    ],
+    "CPaaS Acceleration Alliance": [
+      "Kevin Nethercott"
+    ],
+    "HPE Aruba Networking Marketing": [
+      "Scott Calzia"
+    ],
+    "Telef\u00f3nica and ETSI": [
+      "Diego R. Lopez"
+    ]
+  },
+  "sentiments": [],
+  "subjects": [
+    " Infrastructure ",
+    " Network ",
+    " Open RAN ",
+    " Automation ",
+    " B2B ",
+    " TechCo ",
+    " Innovation ",
+    " 5G ",
+    " Connectivity ",
+    " Enterprise ",
+    " API ",
+    " AI "
+  ]
+}
