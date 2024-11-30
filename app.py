@@ -63,7 +63,8 @@ class TranscriptSearchSystem:
 
 
     def search(self, query: str, top_k: int = 5, selected_speaker: List[str] = None, 
-              selected_date: List[str] = None, selected_title: List[str] = None) -> List[Dict]:
+              selected_date: List[str] = None, selected_title: List[str] = None,
+              selected_company: List[str] = None) -> List[Dict]:
         if not self.metadata:
             return []
         
@@ -78,6 +79,8 @@ class TranscriptSearchSystem:
             if selected_date and meta['date'] not in selected_date:
                 continue
             if selected_title and meta['title'] not in selected_title:
+                continue
+            if selected_company and meta['company'] not in selected_company:
                 continue
             
             filtered_indices.append(idx)
@@ -273,7 +276,7 @@ def main():
     
     # Initialize filter variables with session state values
     if st.session_state.search_system.metadata:
-        col1, col2, col3, col4 = st.columns([2, 2, 2, 1])
+        col1, col2, col3, col4, col5 = st.columns([2, 2, 2, 2, 1])
         
         with col1:
             speakers = sorted(list(set(m['speaker'] for m in st.session_state.search_system.metadata)))
@@ -294,8 +297,14 @@ def main():
             selected_title = st.multiselect("Title", titles,
                                           default=st.session_state.get('selected_title', []))
             st.session_state.selected_title = selected_title
-            
+
         with col4:
+            companies = sorted(list(set(m['company'] for m in st.session_state.search_system.metadata)))
+            selected_company = st.multiselect("Company", companies,
+                                            default=st.session_state.get('selected_company', []))
+            st.session_state.selected_company = selected_company
+            
+        with col5:
             num_results = st.number_input(
                 "Results",
                 min_value=1,
@@ -305,14 +314,15 @@ def main():
             st.session_state.num_results = num_results
     
     # Show results if we have a search query
-    if search_query or selected_speaker or selected_date or selected_title:
+    if search_query or selected_speaker or selected_date or selected_title or selected_company:
         with st.spinner("Searching..."):
             results = st.session_state.search_system.search(
                 search_query, 
                 num_results,
                 selected_speaker,
                 selected_date,
-                selected_title
+                selected_title,
+                selected_company
             )
             
             # Store search state
@@ -321,6 +331,7 @@ def main():
                 'selected_speaker': selected_speaker,
                 'selected_date': selected_date,
                 'selected_title': selected_title,
+                'selected_company': selected_company,
                 'num_results': num_results,
                 'paid_clips': list(st.session_state.paid_clips)  # Include paid_clips in search state
             }
