@@ -51,17 +51,6 @@ class TranscriptSearchSystem:
         self.processed_hashes = set()
 
 
-    def get_segment_hash(self, segment: Dict, main_metadata: Dict) -> str:
-        hash_string = (
-            f"{segment['text']}"
-            f"{segment['metadata']['start_timestamp']}"
-            f"{segment['metadata']['end_timestamp']}"
-            f"{main_metadata.get('title', '')}"
-            f"{main_metadata.get('date', '')}"
-        )
-        return hashlib.md5(hash_string.encode()).hexdigest()
-
-
     def search(self, query: str, top_k: int = 5, selected_speaker: List[str] = None, 
               selected_date: List[str] = None, selected_title: List[str] = None,
               selected_company: List[str] = None) -> List[Dict]:
