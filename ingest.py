@@ -3,7 +3,8 @@ import asyncio
 import json
 import os
 import traceback
-from pyppeteer import launch
+import backoff
+from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
 from bs4 import BeautifulSoup, NavigableString
 from video_utils import get_youtube_video, generate_clips
 from typing import Dict, List, Set, Optional
@@ -43,57 +44,51 @@ class VideoInfo:
     transcript: List[TranscriptSegment]
 
 
-async def get_client_rendered_content(url: str, max_retries: int = 3) -> str:
-    browser = None
-    for attempt in range(max_retries):
+@backoff.on_exception(
+    backoff.expo,
+    (PlaywrightTimeoutError, Exception),
+    max_tries=3
+)
+async def fetch_url(page, url: str) -> Optional[str]:
+    """
+    Fetch a URL with retry logic and proper error handling using Playwright.
+    
+    Args:
+        page: Playwright page instance
+        url: URL to fetch
+        
+    Returns:
+        Optional[str]: HTML content if successful, None if failed
+    """
+    try:
+        # Navigate to the page and wait for network idle
+        await page.goto(url, wait_until='networkidle')
+        
+        # Wait for potential dynamic content
+        await page.wait_for_timeout(2000)  # Additional 2s wait for dynamic content
+        
+        # Get the full HTML after JavaScript execution
+        content = await page.content()
+        return content
+    except Exception as e:
+        logger.error(f"Error fetching {url}: {str(e)}")
+        raise
+
+async def get_client_rendered_content(url: str) -> str:
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(
+            args=['--no-sandbox', '--disable-setuid-sandbox']
+        )
+        context = await browser.new_context()
+        page = await context.new_page()
+        
         try:
-            browser = await launch(
-                handleSIGINT=False,
-                handleSIGTERM=False,
-                handleSIGHUP=False,
-                args=['--no-sandbox', '--disable-setuid-sandbox']
-            )
-            page = await browser.newPage()
-            
-            # Set a reasonable timeout for navigation
-            response = await page.goto(url, {
-                'waitUntil': 'networkidle0',
-                'timeout': 30000  # 30 seconds timeout
-            })
-            
-            if not response.ok:
-                raise Exception(f"Failed to load page: {response.status} {response.statusText}")
-                
-            # Wait for content to load
-            await asyncio.sleep(5)
-            
-            # Get the content
-            content = await page.content()
-            
-            # Clean shutdown
-            await page.close()
-            await browser.close()
-            
+            content = await fetch_url(page, url)
+            if not content:
+                raise Exception("Failed to fetch content")
             return content
-            
-        except Exception as e:
-            logger.error(f"Attempt {attempt + 1}/{max_retries} failed for {url}: {str(e)}")
-            
-            if browser:
-                try:
-                    await browser.close()
-                except Exception as close_error:
-                    logger.error(f"Error closing browser: {str(close_error)}")
-                finally:
-                    browser = None
-            
-            if attempt == max_retries - 1:
-                raise Exception(f"Failed to fetch content after {max_retries} attempts: {str(e)}")
-            
-            # Wait before retrying
-            await asyncio.sleep(2 * (attempt + 1))
-            
-    raise Exception("Failed to fetch content: Max retries exceeded")
+        finally:
+            await browser.close()
 
 def extract_text_with_br(element):
     result = ['<br><br>']
@@ -309,7 +304,7 @@ def db_load_metadata_sets() -> tuple:
 
 
 async def main():
-    url_file = "dsp-urls.txt"  # Changed from dsp-urls-one.txt to dsp-urls.txt
+    url_file = "dsp-urls-one.txt"  # Changed from dsp-urls-one.txt to dsp-urls.txt
 
     if not os.path.exists(url_file):
         logger.error(f"Error: {url_file} not found.")

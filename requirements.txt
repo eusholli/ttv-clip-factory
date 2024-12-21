@@ -1,4 +1,4 @@
-pyppeteer
+playwright
 beautifulsoup4
 yt_dlp
 pytube
@@ -13,3 +13,4 @@ python-dotenv
 boto3
 botocore
 stripe
+backoff
