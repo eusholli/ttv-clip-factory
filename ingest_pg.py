@@ -4,291 +4,475 @@ import json
 import os
 import traceback
 import backoff
-import spacy
-from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
-from bs4 import BeautifulSoup, NavigableString
-from video_utils import get_youtube_video, generate_clips
-from typing import Dict, List, Set, Optional
+from r2_manager import R2Manager
+from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, asdict
+from typing import Dict, List, Set, Optional, Tuple
+from pathlib import Path
+from bs4 import BeautifulSoup, NavigableString
+from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
+from video_utils import get_youtube_video, generate_clips
+from hybrid_search import extract_subject_info
 import logging
+import logging.handlers
+import time
+from update_pg import TranscriptProcessor
 
-from hybrid_search import ALL_SUBJECTS, extract_subject_info
+# Constants
+CACHE_DIR = Path("cache/")
+CLIP_DIR = Path("clip/")
+LOG_DIR = Path("logs/")
+MAX_WORKERS = 4  # Adjust based on system capabilities
 
-# Set the TOKENIZERS_PARALLELISM environment variable
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
+# Ensure directories exist
+for directory in [CACHE_DIR, CLIP_DIR, LOG_DIR]:
+    directory.mkdir(exist_ok=True)
 
-# Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Configure logging with rotation
+def setup_logging():
+    log_file = LOG_DIR / f"ingest_{datetime.now().strftime('%Y%m%d')}.log"
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    
+    # File handler with rotation
+    file_handler = logging.handlers.RotatingFileHandler(
+        log_file, maxBytes=10*1024*1024, backupCount=5
+    )
+    file_handler.setFormatter(formatter)
+    
+    # Console handler
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    
+    # Root logger configuration
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+    root_logger.addHandler(file_handler)
+    root_logger.addHandler(console_handler)
+    
+    # Suppress verbose logs from other libraries
+    logging.getLogger("moviepy").setLevel(logging.WARNING)
+    os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+# Initialize logging
+setup_logging()
 logger = logging.getLogger(__name__)
-
-# Configure logging to suppress MoviePy's console output
-logging.getLogger("moviepy").setLevel(logging.WARNING)
-
-# Load spaCy model
-nlp = spacy.load("en_core_web_sm")
-
-
-CACHE_DIR = "cache/"
-os.makedirs(CACHE_DIR, exist_ok=True)
-
 
 @dataclass
 class TranscriptSegment:
     metadata: Dict[str, Optional[str]]
     text: str
 
-
 @dataclass
 class VideoInfo:
     metadata: Dict[str, Optional[str]]
     transcript: List[TranscriptSegment]
 
+class ContentProcessor:
+    """Handles content processing with caching and error recovery"""
+    def __init__(self, cache_dir: Path, clip_dir: Path):
+        self.cache_dir = cache_dir
+        self.clip_dir = clip_dir
+        self.executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
+        self.r2_manager = R2Manager()
+        self.cleanup_partial_files()
 
-@backoff.on_exception(
-    backoff.expo,
-    (PlaywrightTimeoutError, Exception),
-    max_tries=3
-)
-async def fetch_url(page, url: str) -> Optional[str]:
-    """
-    Fetch a URL with retry logic and proper error handling using Playwright.
-    
-    Args:
-        page: Playwright page instance
-        url: URL to fetch
-        
-    Returns:
-        Optional[str]: HTML content if successful, None if failed
-    """
-    try:
-        # Navigate to the page and wait for network idle
-        await page.goto(url, wait_until='networkidle')
-        
-        # Wait for potential dynamic content
-        await page.wait_for_timeout(2000)  # Additional 2s wait for dynamic content
-        
-        # Get the full HTML after JavaScript execution
-        content = await page.content()
-        return content
-    except Exception as e:
-        logger.error(f"Error fetching {url}: {str(e)}")
-        raise
-
-async def get_client_rendered_content(url: str) -> str:
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(
-            args=['--no-sandbox', '--disable-setuid-sandbox']
-        )
-        context = await browser.new_context()
-        page = await context.new_page()
-        
+    def cleanup_partial_files(self):
+        """Clean up any partial downloads or failed processing artifacts"""
         try:
-            content = await fetch_url(page, url)
-            if not content:
-                raise Exception("Failed to fetch content")
-            return content
-        finally:
-            await browser.close()
+            # Clean up partial HTML files (0 bytes)
+            for file in self.cache_dir.glob("*.html"):
+                if file.stat().st_size == 0:
+                    logger.info(f"Removing empty HTML file: {file}")
+                    file.unlink()
 
-def extract_text_with_br(element):
-    result = ['<br><br>']
-    for child in element.descendants:
-        if isinstance(child, NavigableString):
-            result.append(child.strip())
-        elif child.name == 'br':
-            result.append('<br>')
-    return ''.join(result).strip()
+            # Clean up partial video files (less than 1MB)
+            for file in self.cache_dir.glob("*_video.mp4"):
+                if file.stat().st_size < 1_000_000:  # 1MB
+                    logger.info(f"Removing partial video file: {file}")
+                    file.unlink()
 
+            # Clean up empty JSON files
+            for file in self.cache_dir.glob("*.json"):
+                if file.stat().st_size == 0:
+                    logger.info(f"Removing empty JSON file: {file}")
+                    file.unlink()
 
-def extract_info(html_content: str) -> VideoInfo:
-    try:
-        soup = BeautifulSoup(html_content, 'html.parser')
-        title = soup.title.string.strip() if soup.title else None
-        date_elem = soup.find('p', class_='content-date')
-        date = date_elem.find('span', class_='ng-binding').text.strip() if date_elem else None
-        youtube_iframe = soup.find('iframe', src=lambda x: x and 'youtube' in x)
-        youtube_url = youtube_iframe['src'] if youtube_iframe else None
-        youtube_id = re.search(r'youtube.*\.com/embed/([^?]+)', youtube_url).group(1) if youtube_url else None
-        if get_youtube_video(CACHE_DIR, youtube_id):
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}")
+
+    def get_cached_paths(self, url: str) -> Tuple[Path, Path, Path]:
+        """Get paths for cached files"""
+        base_name = url.replace('://', '_').replace('/', '_')
+        return (
+            self.cache_dir / f"{base_name}.html",
+            self.cache_dir / f"{base_name}.json",
+            self.cache_dir / f"{base_name}_video.mp4"
+        )
+
+    @backoff.on_exception(
+        backoff.expo,
+        (PlaywrightTimeoutError, Exception),
+        max_tries=3
+    )
+    async def fetch_url(self, page, url: str) -> Optional[str]:
+        """Fetch URL content with retry logic"""
+        try:
+            await page.goto(url, wait_until='networkidle')
+            await page.wait_for_timeout(2000)
+            return await page.content()
+        except Exception as e:
+            logger.error(f"Error fetching {url}: {str(e)}")
+            raise
+
+    async def get_client_rendered_content(self, url: str) -> Optional[str]:
+        """Get client-rendered content using Playwright"""
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(
+                args=['--no-sandbox', '--disable-setuid-sandbox']
+            )
+            context = await browser.new_context()
+            page = await context.new_page()
+            
+            try:
+                return await self.fetch_url(page, url)
+            finally:
+                await browser.close()
+
+    def extract_text_with_br(self, element):
+        """Extract text content preserving line breaks"""
+        result = ['<br><br>']
+        for child in element.descendants:
+            if isinstance(child, NavigableString):
+                result.append(child.strip())
+            elif child.name == 'br':
+                result.append('<br>')
+        return ''.join(result).strip()
+
+    def extract_info(self, html_content: str) -> Optional[VideoInfo]:
+        """Extract video information from HTML content"""
+        try:
+            soup = BeautifulSoup(html_content, 'html.parser')
+            
+            # Extract metadata
+            title = soup.title.string.strip() if soup.title else None
+            date_elem = soup.find('p', class_='content-date')
+            date = date_elem.find('span', class_='ng-binding').text.strip() if date_elem else None
+            
+            # Extract YouTube information
+            youtube_iframe = soup.find('iframe', src=lambda x: x and 'youtube' in x)
+            youtube_url = youtube_iframe['src'] if youtube_iframe else None
+            youtube_id = re.search(r'youtube.*\.com/embed/([^?]+)', youtube_url).group(1) if youtube_url else None
+            
+            if not youtube_id:
+                logger.warning("No YouTube ID found in content")
+                return None
+            
+            # Extract transcript
             transcript_elem = soup.find(id='transcript0')
-            transcript = extract_text_with_br(transcript_elem) if transcript_elem else None
+            if not transcript_elem:
+                logger.warning("No transcript element found")
+                return None
+                
+            transcript = self.extract_text_with_br(transcript_elem)
+            
             return VideoInfo(
                 metadata={'title': title, 'date': date, 'youtube_id': youtube_id},
-                transcript=parse_transcript(transcript) if transcript else []
+                transcript=self.parse_transcript(transcript)
             )
-        else:
+        except Exception as e:
+            logger.error(f"Error extracting information: {str(e)}")
             return None
-    except Exception as e:
-        logger.error(f"Error extracting information: {str(e)}")
-        raise
 
+    def extract_speaker_info(self, segment: str) -> Optional[Dict[str, Optional[str]]]:
+        """Extract speaker information from transcript segment"""
+        pattern = r'<br><br>(?:(?P<speaker>[^,(]+?)(?:,\s*(?P<company>[^(]+?))?)?\s*\((?P<timestamp>\d{2}:\d{2}:\d{2}|\d{2}:\d{2})\):<br>'
+        match = re.match(pattern, segment)
+        return {key: value.strip() if value else None 
+                for key, value in match.groupdict().items()} if match else None
 
-def read_file(filename: str) -> Optional[str]:
-    try:
-        if os.path.exists(filename):
-            with open(filename, 'r', encoding='utf-8') as f:
-                return f.read()
-        return None
-    except Exception as e:
-        logger.error(f"Error reading file {filename}: {str(e)}")
-        raise
+    def parse_transcript(self, content: str) -> List[TranscriptSegment]:
+        """Parse transcript content into segments"""
+        parsed_segments = []
+        saved_info = None
 
-def extract_speaker_info(segment: str) -> Optional[Dict[str, Optional[str]]]:
-    pattern = r'<br><br>(?:(?P<speaker>[^,(]+?)(?:,\s*(?P<company>[^(]+?))?)?\s*\((?P<timestamp>\d{2}:\d{2}:\d{2}|\d{2}:\d{2})\):<br>'
+        segments = [segment.strip() for segment in re.split(
+            r'(<br><br>.*?\((?:\d{2}:)?\d{2}:\d{2}\):<br>)',
+            content
+        ) if segment.strip()]
 
-    match = re.match(pattern, segment)
-    return {key: value.strip() if value else None for key, value in match.groupdict().items()} if match else None
+        for i, segment in enumerate(segments):
+            speaker_info = self.extract_speaker_info(segment)
+            if speaker_info:
+                if speaker_info['speaker']:
+                    if saved_info:
+                        text = segments[i-1] if i > 0 else ""
+                        parsed_segments.append(TranscriptSegment(
+                            metadata={
+                                'speaker': saved_info['speaker'],
+                                'company': saved_info['company'] or "Unknown",
+                                'start_timestamp': saved_info['timestamp'],
+                                'end_timestamp': speaker_info['timestamp'],
+                                'subjects': extract_subject_info(text)
+                            },
+                            text=text
+                        ))
+                    saved_info = speaker_info
+                else:
+                    if saved_info:
+                        text = segments[i-1] if i > 0 else ""
+                        parsed_segments.append(TranscriptSegment(
+                            metadata={
+                                'speaker': saved_info['speaker'],
+                                'company': saved_info['company'] or "Unknown",
+                                'start_timestamp': saved_info['timestamp'],
+                                'end_timestamp': speaker_info['timestamp'],
+                                'subjects': extract_subject_info(text)
+                            },
+                            text=text
+                        ))
+                        saved_info['timestamp'] = speaker_info['timestamp']
 
+        if saved_info:
+            text = segments[-1]
+            parsed_segments.append(TranscriptSegment(
+                metadata={
+                    'speaker': saved_info['speaker'],
+                    'company': saved_info['company'] or "Unknown",
+                    'start_timestamp': saved_info['timestamp'],
+                    'end_timestamp': "00:00:00",
+                    'subjects': extract_subject_info(text)
+                },
+                text=text
+            ))
 
-def parse_transcript(content: str) -> List[TranscriptSegment]:
-    parsed_segments = []
-    saved_info = None
+        return parsed_segments
 
-    segments = [segment.strip() for segment in re.split(r'(<br><br>.*?\((?:\d{2}:)?\d{2}:\d{2}\):<br>)',
-                                                        content) if segment.strip()]
+    async def process_url(self, url: str) -> Optional[VideoInfo]:
+        """Process URL with caching and error recovery"""
+        html_path, json_path, video_path = self.get_cached_paths(url)
 
-    for i, segment in enumerate(segments):
-        speaker_info = extract_speaker_info(segment)
-        if speaker_info:
-            if speaker_info['speaker']:
-                if saved_info:
-                    text = segments[i-1] if i > 0 else ""
-                    parsed_segments.append(TranscriptSegment(
-                        metadata={
-                            'speaker': saved_info['speaker'],
-                            'company': saved_info['company'],
-                            'start_timestamp': saved_info['timestamp'],
-                            'end_timestamp': speaker_info['timestamp'],
-                            'subjects': extract_subject_info(text)
-                        },
-                        text=text
-                    ))
-                saved_info = speaker_info
-                if not saved_info['company']:
-                    saved_info['company'] = "Unknown"
+        # Check if already processed by looking for the JSON result file
+        if json_path.exists() and json_path.stat().st_size > 0:
+            logger.info(f"URL {url} already processed successfully")
+            # Process existing transcript with TranscriptProcessor
+            try:
+                logger.info("Processing existing transcript with TranscriptProcessor...")
+                transcript_processor = TranscriptProcessor()
+                with open(json_path, 'r') as f:
+                    json_data = json.load(f)
+                transcript_processor.process_transcript(json_data)
+                logger.info("Successfully processed existing transcript with TranscriptProcessor")
+            except Exception as e:
+                logger.error(f"Error processing existing transcript with TranscriptProcessor: {str(e)}")
+            return self.load_cached_result(url)
+
+        start_time = time.time()
+
+        # Clean up any existing failed artifacts for this URL
+        for path in [html_path, json_path, video_path]:
+            if path.exists() and path.stat().st_size == 0:
+                logger.info(f"Removing empty file: {path}")
+                path.unlink()
+
+        try:
+            # Fetch and cache HTML if needed
+            if not html_path.exists() or html_path.stat().st_size == 0:
+                logger.info(f"Fetching content for {url}")
+                content = await self.get_client_rendered_content(url)
+                if content:
+                    html_path.write_text(content, encoding='utf-8')
             else:
-                if saved_info:
-                    text = segments[i-1] if i > 0 else ""
-                    parsed_segments.append(TranscriptSegment(
-                        metadata={
-                            'speaker': saved_info['speaker'],
-                            'company': saved_info['company'],
-                            'start_timestamp': saved_info['timestamp'],
-                            'end_timestamp': speaker_info['timestamp'],
-                            'subjects': extract_subject_info(text)
-                        },
-                        text=text
-                    ))
-                    saved_info['timestamp'] = speaker_info['timestamp']
-        elif saved_info:
-            continue
+                content = html_path.read_text(encoding='utf-8')
 
-    if saved_info:
-        text = segments[-1]
-        parsed_segments.append(TranscriptSegment(
-            metadata={
-                'speaker': saved_info['speaker'],
-                'company': saved_info['company'],
-                'start_timestamp': saved_info['timestamp'],
-                'end_timestamp': "00:00:00",
-                'subjects': extract_subject_info(text)
-            },
-            text=text
-        ))
+            # Extract information
+            info = self.extract_info(content)
+            if not info:
+                raise Exception("Failed to extract information from content")
 
-    return parsed_segments
+            # Process video and generate clips
+            if info.metadata.get('youtube_id'):
+                youtube_id = info.metadata['youtube_id']
+                
+                # Check if video needs to be downloaded
+                if not video_path.exists() or video_path.stat().st_size == 0:
+                    logger.info(f"Downloading video {youtube_id}")
+                    if not get_youtube_video(str(self.cache_dir), youtube_id):
+                        raise Exception(f"Failed to download video {youtube_id}")
+                else:
+                    logger.info(f"Video {youtube_id} already cached at {video_path}")
 
+                # Check if clips exist in R2 storage
+                test_clip_name = f"{youtube_id}_0.mp4"  # First clip usually exists
+                if self.r2_manager.file_exists(test_clip_name):
+                    logger.info(f"Clips already exist in R2 storage for {youtube_id}")
+                else:
+                    # Generate and upload clips if they don't exist
+                    if info.transcript:
+                        logger.info(f"Generating clips for {youtube_id}")
+                        info_dict = asdict(info)
+                        info_dict['transcript'] = await asyncio.get_event_loop().run_in_executor(
+                            self.executor,
+                            generate_clips,
+                            str(self.cache_dir),
+                            info_dict
+                        )
+                        info = VideoInfo(
+                            metadata=info_dict['metadata'],
+                            transcript=[TranscriptSegment(**segment) for segment in info_dict['transcript']]
+                        )
+                        
+                        # Upload newly generated clips to R2
+                        clip_pattern = f"{youtube_id}_*.mp4"
+                        new_clips = list(self.clip_dir.glob(clip_pattern))
+                        upload_success = True
+                        for clip in new_clips:
+                            if not self.r2_manager.upload_file(str(clip), clip.name):
+                                upload_success = False
+                                logger.error(f"Failed to upload clip {clip.name} to R2")
+                                break
+                        
+                        if not upload_success:
+                            raise Exception("Failed to upload clips to R2 storage")
 
-def get_cached_filename(url: str) -> str:
-    return f"{CACHE_DIR}cached_{url.replace('://', '_').replace('/', '_')}"
+            # Save results
+            json_path.write_text(
+                json.dumps(asdict(info), ensure_ascii=False, indent=2),
+                encoding='utf-8'
+            )
 
+            # Process transcript with TranscriptProcessor
+            try:
+                logger.info("Processing transcript with TranscriptProcessor...")
+                transcript_processor = TranscriptProcessor()
+                with open(json_path, 'r') as f:
+                    json_data = json.load(f)
+                transcript_processor.process_transcript(json_data)
+                logger.info("Successfully processed transcript with TranscriptProcessor")
+            except Exception as e:
+                logger.error(f"Error processing transcript with TranscriptProcessor: {str(e)}")
+                # Continue execution as the main processing was successful
 
-async def process_url(url: str) -> Optional[VideoInfo]:
-    try:
-        cached_filename = get_cached_filename(url)
-        html_filename = f"{cached_filename}.html"
-        json_filename = f"{cached_filename}.json"
+            logger.info(f"Successfully processed {url} in {time.time() - start_time:.2f}s")
+            return info
 
-        if os.path.exists(json_filename):
-            logger.info(f"Using cached JSON for {url}")
-            with open(json_filename, 'r', encoding='utf-8') as f:
-                data = json.load(f)
+        except Exception as e:
+            error_msg = f"Error processing {url}: {str(e)}\n{traceback.format_exc()}"
+            logger.error(error_msg)
+            return None
+
+    def load_cached_result(self, url: str) -> Optional[VideoInfo]:
+        """Load cached processing result"""
+        _, json_path, _ = self.get_cached_paths(url)
+        try:
+            if json_path.exists():
+                data = json.loads(json_path.read_text(encoding='utf-8'))
                 return VideoInfo(
                     metadata=data['metadata'],
                     transcript=[TranscriptSegment(**segment) for segment in data['transcript']]
                 )
-
-        if os.path.exists(html_filename):
-            logger.info(f"Using cached HTML for {url}")
-            content = read_file(html_filename)
-        else:
-            logger.info(f"Fetching content from web for {url}")
-            try:
-                content = await get_client_rendered_content(url)
-                # Only save content if successfully retrieved
-                with open(html_filename, 'w', encoding='utf-8') as f:
-                    f.write(content)
-            except Exception as e:
-                logger.error(f"Failed to fetch content for {url}: {str(e)}")
-                return None
-
-        info = extract_info(content)
-        if info is None:
-            logger.warning(f"No valid information extracted from {url}")
-            return None
-
-        if info.transcript:
-            logger.info(f"Generating clips for {url}")
-            info_dict = asdict(info)
-            try:
-                info_dict['transcript'] = generate_clips(CACHE_DIR, info_dict)
-                info = VideoInfo(
-                    metadata=info_dict['metadata'],
-                    transcript=[TranscriptSegment(**segment) for segment in info_dict['transcript']]
-                )
-
-                with open(json_filename, 'w', encoding='utf-8') as f:
-                    json.dump(asdict(info), f, ensure_ascii=False, indent=4)
-
-                logger.info(f"Information extracted and saved to {json_filename}")
-            except Exception as e:
-                logger.error(f"Error generating clips for {url}: {str(e)}")
-                return None
-        else:
-            logger.warning(f"No transcript found for {url}")
-
-        return info
-
-    except Exception as e:
-        logger.error(f"Error processing URL {url}: {str(e)}\n{traceback.format_exc()}")
+        except Exception as e:
+            logger.error(f"Error loading cached result for {url}: {e}")
         return None
 
-async def process_urls(urls: List[str]) -> List[Optional[VideoInfo]]:
-    return await asyncio.gather(*[process_url(url) for url in urls])
-
+async def process_urls(urls: List[str], batch_size: int = 3, max_retries: int = 3):
+    """Process URLs in batches with concurrent execution"""
+    processor = ContentProcessor(CACHE_DIR, CLIP_DIR)
+    total_urls = len(urls)
+    failed_urls = []
+    
+    for i in range(0, total_urls, batch_size):
+        batch = urls[i:i + batch_size]
+        batch_num = i//batch_size + 1
+        total_batches = (total_urls + batch_size - 1)//batch_size
+        logger.info(f"Processing batch {batch_num}/{total_batches}")
+        
+        start_time = time.time()
+        tasks = [processor.process_url(url) for url in batch]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        for url, result in zip(batch, results):
+            if isinstance(result, Exception):
+                logger.error(f"Failed to process {url}: {result}")
+                failed_urls.append(url)
+            elif result is None:
+                logger.warning(f"No results for {url}")
+                failed_urls.append(url)
+            else:
+                logger.info(f"Successfully processed {url}")
+        
+        batch_time = time.time() - start_time
+        logger.info(f"Batch {batch_num}/{total_batches} completed in {batch_time:.2f}s")
+        
+        # Add a small delay between batches to prevent rate limiting
+        if i + batch_size < total_urls:
+            await asyncio.sleep(1)
+    
+    # Retry failed URLs
+    if failed_urls:
+        logger.info(f"Retrying {len(failed_urls)} failed URLs")
+        retry_count = 0
+        while failed_urls and retry_count < max_retries:
+            retry_count += 1
+            logger.info(f"Retry attempt {retry_count}/{max_retries}")
+            
+            retry_batch = failed_urls.copy()
+            failed_urls.clear()
+            
+            tasks = [processor.process_url(url) for url in retry_batch]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            
+            for url, result in zip(retry_batch, results):
+                if isinstance(result, Exception) or result is None:
+                    failed_urls.append(url)
+                else:
+                    logger.info(f"Successfully processed {url} on retry {retry_count}")
+            
+            if failed_urls:
+                logger.warning(f"{len(failed_urls)} URLs still failed after retry {retry_count}")
+                await asyncio.sleep(5)  # Longer delay between retries
+        
+        if failed_urls:
+            logger.error(f"Failed to process {len(failed_urls)} URLs after {max_retries} retries")
+            for url in failed_urls:
+                logger.error(f"Failed URL: {url}")
 
 async def main():
-    url_file = "dsp-urls-one.txt"  # Changed from dsp-urls-one.txt to dsp-urls.txt
-
-    if not os.path.exists(url_file):
+    """Main entry point"""
+    url_file = Path("dsp-urls-one.txt")
+    if not url_file.exists():
         logger.error(f"Error: {url_file} not found.")
         return
 
-    with open(url_file, 'r') as f:
-        urls = [line.strip() for line in f if line.strip()]
+    urls = url_file.read_text().strip().split('\n')
+    if not urls:
+        logger.error("No URLs found in input file.")
+        return
 
+    start_time = time.time()
     total_urls = len(urls)
-    for i, url in enumerate(urls, 1):
-        logger.info(f"[{i}/{total_urls}] Processing {url}")
-        info = await process_url(url)
-        if info is None:
-            logger.warning(f"[{i}/{total_urls}] Failed to process {url}")
-            continue
-
-        logger.info(f"[{i}/{total_urls}] Successfully processed {url}")
-
-    logger.info("Processing complete. Check logs for any errors.")
-
+    logger.info(f"Starting processing of {total_urls} URLs")
+    
+    try:
+        await process_urls(urls)
+    except Exception as e:
+        logger.error(f"Fatal error during processing: {e}\n{traceback.format_exc()}")
+    finally:
+        total_time = time.time() - start_time
+        logger.info(f"Processing complete in {total_time:.2f}s. Check logs for details.")
+        
+        # Print summary
+        processor = ContentProcessor(CACHE_DIR, CLIP_DIR)
+        successful = sum(1 for url in urls if (processor.get_cached_paths(url)[1]).exists())
+        failed = total_urls - successful
+        logger.info(f"Summary:")
+        logger.info(f"- Total URLs: {total_urls}")
+        logger.info(f"- Successfully processed: {successful}")
+        logger.info(f"- Failed: {failed}")
+        logger.info(f"- Success rate: {(successful/total_urls)*100:.1f}%")
+        logger.info(f"- Average time per URL: {total_time/total_urls:.2f}s")
 
 if __name__ == "__main__":
     asyncio.run(main())
