@@ -4,6 +4,7 @@ import json
 import os
 import traceback
 import backoff
+import spacy
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
 from bs4 import BeautifulSoup, NavigableString
 from video_utils import get_youtube_video, generate_clips
@@ -11,7 +12,7 @@ from typing import Dict, List, Set, Optional
 from dataclasses import dataclass, asdict
 import logging
 
-from hybrid_search import ALL_SUBJECTS
+from hybrid_search import ALL_SUBJECTS, extract_subject_info
 
 # Set the TOKENIZERS_PARALLELISM environment variable
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -23,10 +24,11 @@ logger = logging.getLogger(__name__)
 # Configure logging to suppress MoviePy's console output
 logging.getLogger("moviepy").setLevel(logging.WARNING)
 
+# Load spaCy model
+nlp = spacy.load("en_core_web_sm")
+
 
 CACHE_DIR = "cache/"
-DB_METADATA_FILE = os.path.join(CACHE_DIR, "db_metadata.json")
-
 os.makedirs(CACHE_DIR, exist_ok=True)
 
 
@@ -130,11 +132,6 @@ def read_file(filename: str) -> Optional[str]:
     except Exception as e:
         logger.error(f"Error reading file {filename}: {str(e)}")
         raise
-
-
-def extract_subject_info(text: str) -> List[str]:
-    return [subject for subject in ALL_SUBJECTS.values() if subject.lower() in text.lower()]
-
 
 def extract_speaker_info(segment: str) -> Optional[Dict[str, Optional[str]]]:
     pattern = r'<br><br>(?:(?P<speaker>[^,(]+?)(?:,\s*(?P<company>[^(]+?))?)?\s*\((?P<timestamp>\d{2}:\d{2}:\d{2}|\d{2}:\d{2})\):<br>'
@@ -270,37 +267,6 @@ async def process_urls(urls: List[str]) -> List[Optional[VideoInfo]]:
     return await asyncio.gather(*[process_url(url) for url in urls])
 
 
-def db_save_metadata_sets(processed_urls: Set[str], speakers: Set[str],
-                          companies: Dict[str, Set[str]],
-                          sentiments: Set[str], subjects: Set[str]):
-    metadata = {
-        'processed_urls': list(processed_urls),
-        'speakers': list(speakers),
-        'companies': {company: list(speakers) for company, speakers in companies.items()},
-        'sentiments': list(sentiments),
-        'subjects': list(subjects)
-    }
-
-    with open(DB_METADATA_FILE, 'w') as f:
-        json.dump(metadata, f, indent=2)
-
-
-def db_load_metadata_sets() -> tuple:
-    if os.path.exists(DB_METADATA_FILE):
-        with open(DB_METADATA_FILE, 'r') as f:
-            metadata = json.load(f)
-
-        return (
-            set(metadata.get('processed_urls', [])),
-            set(metadata.get('speakers', [])),
-            {company: set(speakers) for company, speakers in metadata.get('companies', {}).items()},
-            set(metadata.get('sentiments', [])),
-            set(metadata.get('subjects', SUBJECTS))
-        )
-
-    return set(), set(), {}, set(), set(SUBJECTS)
-
-
 async def main():
     url_file = "dsp-urls-one.txt"  # Changed from dsp-urls-one.txt to dsp-urls.txt
 
@@ -308,40 +274,18 @@ async def main():
         logger.error(f"Error: {url_file} not found.")
         return
 
-    processed_urls, speakers, companies, sentiments, subjects = db_load_metadata_sets()
-
     with open(url_file, 'r') as f:
         urls = [line.strip() for line in f if line.strip()]
 
     total_urls = len(urls)
     for i, url in enumerate(urls, 1):
-        if url in processed_urls:  # Uncommented this check to skip already processed URLs
-            logger.info(f"[{i}/{total_urls}] {url} already processed")
-            continue
-
         logger.info(f"[{i}/{total_urls}] Processing {url}")
         info = await process_url(url)
         if info is None:
             logger.warning(f"[{i}/{total_urls}] Failed to process {url}")
             continue
 
-        for entry in info.transcript:
-            metadata = {**info.metadata, **entry.metadata}
-            company = metadata.get('company')
-            speaker = metadata.get('speaker')
-            entry_subjects = metadata.get('subjects', [])
-
-            if speaker:
-                speakers.add(speaker)
-            subjects.update(entry_subjects)
-
-            if company and speaker:
-                companies.setdefault(company, set()).add(speaker)
-
-        processed_urls.add(url)
-        logger.info(f"[{i}/{total_urls}] Added new url: {url}")
-
-    db_save_metadata_sets(processed_urls, speakers, companies, sentiments, subjects)
+        logger.info(f"[{i}/{total_urls}] Successfully processed {url}")
 
     logger.info("Processing complete. Check logs for any errors.")
 
