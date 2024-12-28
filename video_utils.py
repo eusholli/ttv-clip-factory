@@ -13,7 +13,7 @@ if not os.path.exists(CLIP_DIR):
 
 def get_youtube_video(cache_dir, yt_id):
     yt_url = f"https://www.youtube.com/watch?v={yt_id}"
-    download_file = cache_dir + yt_id + ".mp4"
+    download_file = cache_dir + '/' + yt_id + ".mp4"
 
     if os.path.exists(download_file):
         print(f"{yt_url} already cached.")
@@ -99,20 +99,6 @@ def try_yt_dlp_download(yt_url, download_file):
         print(f"yt-dlp Error: Unable to download the YouTube video. {str(e)}")
         return False
 
-def timestamp_to_seconds(timestamp):
-    """Convert a timestamp in the format 'hh:mm:ss' or 'mm:ss' to total seconds."""
-    parts = timestamp.split(':')
-    if len(parts) == 3:
-        h, m, s = map(int, parts)
-        ts = h * 3600 + m * 60 + s
-    elif len(parts) == 2:
-        m, s = map(int, parts)
-        ts = m * 60 + s
-    else:
-        raise ValueError(f"Invalid timestamp format: {timestamp}")
-
-    return ts
-
 
 def generate_clips(cache_dir, info):
     yt_id = info['metadata']['youtube_id']
@@ -124,10 +110,8 @@ def generate_clips(cache_dir, info):
         video = VideoFileClip(download_file)
 
         for entry in transcript:
-            start_time = timestamp_to_seconds(
-                entry['metadata']['start_timestamp'])
-            end_time = timestamp_to_seconds(
-                entry['metadata']['end_timestamp'])
+            start_time = entry['metadata']['start_timestamp']
+            end_time = entry['metadata']['end_timestamp']
 
             # Adjust start and end times
             # Start 3 second earlier, but not before 0
@@ -153,17 +137,24 @@ def generate_clips(cache_dir, info):
                 if r2.upload_file(output_filename):
                     continue
             
-            # Create clip using subclipped instead of subclip
-            clip = video.subclipped(start_time, end_time)
+            try:
+                # Create clip using subclipped instead of subclip
+                clip = video.subclipped(start_time, end_time)
 
-            # Write the clip to a file
-            clip.write_videofile(
-                output_filename, codec="libx264", audio_codec="aac")
+                # Write the clip to a file
+                clip.write_videofile(
+                    output_filename, codec="libx264", audio_codec="aac")
 
-            print(f"Generated clip: {output_filename}")
+                print(f"Generated clip: {output_filename}")
 
-            # Upload to R2
-            r2.upload_file(output_filename)
+                # Upload to R2
+                r2.upload_file(output_filename)
+            except ValueError as e:
+                if "start_time" in str(e) and "should be smaller than the clip's duration" in str(e):
+                    print(f"Error: Start time {start_time} exceeds video duration {video.duration}. Skipping clip.")
+                    entry['metadata']['download'] = None
+                else:
+                    raise e
 
         # Close the video to free up resources
         video.close()

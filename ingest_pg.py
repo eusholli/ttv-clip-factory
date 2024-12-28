@@ -13,17 +13,18 @@ from pathlib import Path
 from bs4 import BeautifulSoup, NavigableString
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
 from video_utils import get_youtube_video, generate_clips
-from hybrid_search import extract_subject_info
+from hybrid_search import extract_subject_info, TranscriptSearch
 import logging
 import logging.handlers
 import time
-from update_pg import TranscriptProcessor
+import hashlib
 
 # Constants
 CACHE_DIR = Path("cache/")
 CLIP_DIR = Path("clip/")
 LOG_DIR = Path("logs/")
 MAX_WORKERS = 4  # Adjust based on system capabilities
+MIN_DURATION = 10  # Minimum duration for a clip in seconds
 
 # Ensure directories exist
 for directory in [CACHE_DIR, CLIP_DIR, LOG_DIR]:
@@ -77,7 +78,132 @@ class ContentProcessor:
         self.clip_dir = clip_dir
         self.executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
         self.r2_manager = R2Manager()
+        self.search = TranscriptSearch()
         self.cleanup_partial_files()
+
+    def _time_to_seconds(self, time_str: str) -> int:
+        """Convert time string (MM:SS or HH:MM:SS) to integer seconds."""
+        try:
+            parts = time_str.split(':')
+            if len(parts) == 2:  # MM:SS
+                minutes, seconds = map(int, parts)
+                return minutes * 60 + seconds
+            elif len(parts) == 3:  # HH:MM:SS
+                hours, minutes, seconds = map(int, parts)
+                return hours * 3600 + minutes * 60 + seconds
+            else:
+                logger.warning(f"Invalid time format: {time_str}, using 0")
+                return 0
+        except (ValueError, AttributeError):
+            logger.warning(f"Invalid time format: {time_str}, using 0")
+            return 0
+
+    def get_segment_hash(self, segment: dict, main_metadata: dict) -> str:
+        hash_string = (
+            f"{segment['text']}"
+            f"{segment['metadata']['start_timestamp']}"
+            f"{segment['metadata']['end_timestamp']}"
+            f"{main_metadata.get('title', '')}"
+            f"{main_metadata.get('date', '')}"
+        )
+        return hashlib.md5(hash_string.encode()).hexdigest()
+
+    def process_transcript(self, json_data: dict) -> None:
+        try:
+            transcript = json_data['transcript']
+            main_metadata = json_data.get('metadata', {})
+            youtube_id = main_metadata.get('youtube_id')
+            
+            if youtube_id:
+                logger.info(f"Deleting existing entries for YouTube ID: {youtube_id}")
+                self.search.cursor.execute('DELETE FROM transcripts WHERE youtube_id = %s', (youtube_id,))
+                self.search.conn.commit()
+            
+            new_count = 0
+            skipped = 0
+            
+            logger.info(f"Processing transcript with {len(transcript)} segments...")
+            
+            # Parse date string to datetime object if exists
+            date_str = main_metadata.get('date', '')
+            date = None
+            if date_str:
+                try:
+                    # Try different date formats
+                    date_formats = ['%Y-%m-%d', '%b %d, %Y']
+                    for fmt in date_formats:
+                        try:
+                            date = datetime.strptime(date_str, fmt)
+                            break
+                        except ValueError:
+                            continue
+                    if date is None:
+                        logger.warning(f"Could not parse date: {date_str}")
+                except Exception as e:
+                    logger.warning(f"Error parsing date '{date_str}': {str(e)}")
+
+            # Prepare batch data
+            batch_data = []
+            
+            for segment in transcript:
+                segment_hash = self.get_segment_hash(segment, main_metadata)
+                start_time = int(segment['metadata']['start_timestamp'])
+                end_time = int(segment['metadata']['end_timestamp'])
+                duration = end_time - start_time
+                
+                # Skip segments less than MIN_DURATION seconds
+                if duration < MIN_DURATION:
+                    logger.info(f"Skipping segment \"{segment['text']}\"; shorter than {MIN_DURATION} seconds (duration: {duration}s)")
+                    continue
+                
+                batch_data.append({
+                    'segment_hash': segment_hash,
+                    'text': segment['text'],
+                    'title': main_metadata.get('title', ''),
+                    'date': date,
+                    'youtube_id': main_metadata.get('youtube_id', ''),
+                    'source': main_metadata.get('source', ''),
+                    'speaker': segment['metadata']['speaker'],
+                    'company': segment['metadata']['company'],
+                    'start_time': start_time,
+                    'end_time': end_time,
+                    'duration': end_time - start_time,
+                    'subjects': segment['metadata']['subjects'],
+                    'download': segment['metadata']['download']
+                })
+            
+            try:
+                self.search.add_transcripts_batch(batch_data)
+                new_count = len(batch_data)
+            except Exception as e:
+                if "duplicate key value" in str(e):
+                    # If we hit duplicates, rollback the failed transaction and fall back to individual inserts
+                    self.search.conn.rollback()
+                    new_count = 0
+                    skipped = 0
+                    for data in batch_data:
+                        try:
+                            self.search.add_transcript(**data)
+                            new_count += 1
+                        except Exception as e2:
+                            if "duplicate key value" in str(e2):
+                                skipped += 1
+                                logger.info(f"Skipping duplicate segment: {data['segment_hash']}")
+                            else:
+                                # Rollback the current transaction before raising
+                                self.search.conn.rollback()
+                                raise e2
+                else:
+                    # Rollback the current transaction before raising
+                    self.search.conn.rollback()
+                    raise e
+            
+            logger.info(f"Added {new_count} new transcript segments")
+            logger.info(f"Skipped {skipped} existing segments")
+            
+        except Exception as e:
+            logger.error(f"Error processing transcript: {str(e)}")
+            raise
 
     def cleanup_partial_files(self):
         """Clean up any partial downloads or failed processing artifacts"""
@@ -89,10 +215,11 @@ class ContentProcessor:
                     file.unlink()
 
             # Clean up partial video files (less than 1MB)
-            for file in self.cache_dir.glob("*_video.mp4"):
-                if file.stat().st_size < 1_000_000:  # 1MB
-                    logger.info(f"Removing partial video file: {file}")
-                    file.unlink()
+            for pattern in ["*_video.mp4", "*.mp4"]:
+                for file in self.cache_dir.glob(pattern):
+                    if file.stat().st_size < 1_000_000:  # 1MB
+                        logger.info(f"Removing partial video file: {file}")
+                        file.unlink()
 
             # Clean up empty JSON files
             for file in self.cache_dir.glob("*.json"):
@@ -103,13 +230,18 @@ class ContentProcessor:
         except Exception as e:
             logger.error(f"Error during cleanup: {e}")
 
-    def get_cached_paths(self, url: str) -> Tuple[Path, Path, Path]:
+    def get_cached_url(self, url: str) -> Tuple[Path, Path]:
         """Get paths for cached files"""
         base_name = url.replace('://', '_').replace('/', '_')
         return (
             self.cache_dir / f"{base_name}.html",
             self.cache_dir / f"{base_name}.json",
-            self.cache_dir / f"{base_name}_video.mp4"
+        )
+
+    def get_cached_video(self, youtube_id: str) -> Path:
+        """Get paths for cached files"""
+        return (
+            self.cache_dir / f"{youtube_id}.mp4" 
         )
 
     @backoff.on_exception(
@@ -213,8 +345,8 @@ class ContentProcessor:
                             metadata={
                                 'speaker': saved_info['speaker'],
                                 'company': saved_info['company'] or "Unknown",
-                                'start_timestamp': saved_info['timestamp'],
-                                'end_timestamp': speaker_info['timestamp'],
+                                'start_timestamp': self._time_to_seconds(saved_info['timestamp']),
+                                'end_timestamp': self._time_to_seconds(speaker_info['timestamp']),
                                 'subjects': extract_subject_info(text)
                             },
                             text=text
@@ -227,8 +359,8 @@ class ContentProcessor:
                             metadata={
                                 'speaker': saved_info['speaker'],
                                 'company': saved_info['company'] or "Unknown",
-                                'start_timestamp': saved_info['timestamp'],
-                                'end_timestamp': speaker_info['timestamp'],
+                                'start_timestamp': self._time_to_seconds(saved_info['timestamp']),
+                                'end_timestamp': self._time_to_seconds(speaker_info['timestamp']),
                                 'subjects': extract_subject_info(text)
                             },
                             text=text
@@ -241,8 +373,8 @@ class ContentProcessor:
                 metadata={
                     'speaker': saved_info['speaker'],
                     'company': saved_info['company'] or "Unknown",
-                    'start_timestamp': saved_info['timestamp'],
-                    'end_timestamp': "00:00:00",
+                    'start_timestamp': self._time_to_seconds(saved_info['timestamp']),
+                    'end_timestamp': self._time_to_seconds("00:00:00"),
                     'subjects': extract_subject_info(text)
                 },
                 text=text
@@ -252,27 +384,26 @@ class ContentProcessor:
 
     async def process_url(self, url: str) -> Optional[VideoInfo]:
         """Process URL with caching and error recovery"""
-        html_path, json_path, video_path = self.get_cached_paths(url)
+        html_path, json_path = self.get_cached_url(url)
 
         # Check if already processed by looking for the JSON result file
         if json_path.exists() and json_path.stat().st_size > 0:
             logger.info(f"URL {url} already processed successfully")
-            # Process existing transcript with TranscriptProcessor
+            # Process existing transcript
             try:
-                logger.info("Processing existing transcript with TranscriptProcessor...")
-                transcript_processor = TranscriptProcessor()
+                logger.info("Processing existing transcript...")
                 with open(json_path, 'r') as f:
                     json_data = json.load(f)
-                transcript_processor.process_transcript(json_data)
-                logger.info("Successfully processed existing transcript with TranscriptProcessor")
+                self.process_transcript(json_data)
+                logger.info("Successfully processed existing transcript")
             except Exception as e:
-                logger.error(f"Error processing existing transcript with TranscriptProcessor: {str(e)}")
+                logger.error(f"Error processing existing transcript: {str(e)}")
             return self.load_cached_result(url)
 
         start_time = time.time()
 
         # Clean up any existing failed artifacts for this URL
-        for path in [html_path, json_path, video_path]:
+        for path in [html_path, json_path]:
             if path.exists() and path.stat().st_size == 0:
                 logger.info(f"Removing empty file: {path}")
                 path.unlink()
@@ -295,6 +426,8 @@ class ContentProcessor:
             # Process video and generate clips
             if info.metadata.get('youtube_id'):
                 youtube_id = info.metadata['youtube_id']
+                # Update video path with youtube_id
+                video_path = self.get_cached_video(youtube_id)
                 
                 # Check if video needs to be downloaded
                 if not video_path.exists() or video_path.stat().st_size == 0:
@@ -343,16 +476,15 @@ class ContentProcessor:
                 encoding='utf-8'
             )
 
-            # Process transcript with TranscriptProcessor
+            # Process transcript
             try:
-                logger.info("Processing transcript with TranscriptProcessor...")
-                transcript_processor = TranscriptProcessor()
+                logger.info("Processing transcript...")
                 with open(json_path, 'r') as f:
                     json_data = json.load(f)
-                transcript_processor.process_transcript(json_data)
-                logger.info("Successfully processed transcript with TranscriptProcessor")
+                self.process_transcript(json_data)
+                logger.info("Successfully processed transcript")
             except Exception as e:
-                logger.error(f"Error processing transcript with TranscriptProcessor: {str(e)}")
+                logger.error(f"Error processing transcript: {str(e)}")
                 # Continue execution as the main processing was successful
 
             logger.info(f"Successfully processed {url} in {time.time() - start_time:.2f}s")
@@ -365,7 +497,7 @@ class ContentProcessor:
 
     def load_cached_result(self, url: str) -> Optional[VideoInfo]:
         """Load cached processing result"""
-        _, json_path, _ = self.get_cached_paths(url)
+        _, json_path= self.get_cached_url(url)
         try:
             if json_path.exists():
                 data = json.loads(json_path.read_text(encoding='utf-8'))
@@ -465,7 +597,7 @@ async def main():
         
         # Print summary
         processor = ContentProcessor(CACHE_DIR, CLIP_DIR)
-        successful = sum(1 for url in urls if (processor.get_cached_paths(url)[1]).exists())
+        successful = sum(1 for url in urls if (processor.get_cached_url(url)[1]).exists())
         failed = total_urls - successful
         logger.info(f"Summary:")
         logger.info(f"- Total URLs: {total_urls}")

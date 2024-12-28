@@ -6,7 +6,6 @@ moviepy
 requests
 streamlit
 sentence-transformers
-faiss-cpu
 numpy
 pandas
 python-dotenv
@@ -14,3 +13,14 @@ boto3
 botocore
 stripe
 backoff
+psycopg2-binary
+sqlalchemy
+pgvector
+accelerate
+torch
+spacy
+textblob
+transformers
+evaluate
+scikit-learn
+nltk

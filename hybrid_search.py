@@ -122,9 +122,9 @@ class TranscriptSearch:
                 source TEXT,
                 speaker TEXT,
                 company TEXT,
-                start_time FLOAT,
-                end_time FLOAT,
-                duration FLOAT,
+                start_time INTEGER,
+                end_time INTEGER,
+                duration INTEGER,
                 subjects TEXT[],
                 download TEXT,
                 text TEXT,
@@ -167,9 +167,9 @@ class TranscriptSearch:
                       source: str,
                       speaker: str,
                       company: Optional[str] = None,
-                      start_time: Optional[float] = None,
-                      end_time: Optional[float] = None,
-                      duration: Optional[float] = None,
+                      start_time: Optional[int] = None,
+                      end_time: Optional[int] = None,
+                      duration: Optional[int] = None,
                       subjects: Optional[List[str]] = None,
                       download: Optional[str] = None) -> None:
         """
@@ -266,8 +266,8 @@ class TranscriptSearch:
                 - speakers: List[str] - List of speakers to filter on
                 - companies: List[str] - List of companies to filter on
                 - subjects: List[str] - List of subjects to filter on
-                - min_duration: float - Minimum duration
-                - max_duration: float - Maximum duration
+                - min_duration: int - Minimum duration
+                - max_duration: int - Maximum duration
                 - title: str - Filter by partial title match (case-insensitive)
             semantic_weight: Weight given to semantic search vs full-text search (0.0 to 1.0)
             limit: Maximum number of results to return
@@ -285,8 +285,7 @@ class TranscriptSearch:
         # Check for filter values in search text
         filter_mappings = {
             "speakers": "speakers",
-            "companies": "companies",
-            "subjects": "subjects"
+            "companies": "companies"
         }
         
         for filter_key, filter_name in filter_mappings.items():
@@ -297,6 +296,13 @@ class TranscriptSearch:
                     filters[filter_name] = found_values
                 else:
                     filters[filter_name] = list(set(filters[filter_name] + found_values))
+        
+        found_subjects = extract_subject_info(search_text_lower)
+        if found_subjects:
+            if 'subjects' not in filters:
+                filters['subjects'] = found_subjects
+            else:
+                filters['subjects'] = list(set(filters['subjects'] + found_subjects))
 
         # Generate embedding for semantic search
         model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -355,7 +361,7 @@ class TranscriptSearch:
                     params.append(filters['companies'])
 
             if 'subjects' in filters and filters['subjects']:
-                query += ' AND subjects = ANY(%s)'
+                query += ' AND subjects && ARRAY[%s]'
                 params.append(filters['subjects'])
                         
             if 'min_duration' in filters:
@@ -478,9 +484,9 @@ def main():
             'source': 'youtube',
             'speaker': 'John Smith',
             'company': 'Tech Corp',
-            'start_time': 120.5,
-            'end_time': 180.5,
-            'duration': 60.0,
+            'start_time': 120,
+            'end_time': 180,
+            'duration': 60,
             'subjects': ['cloud', 'growth', 'technology'],
             'download': 'https://example.com/video1',
             'text': 'We are seeing strong growth in cloud services across all regions.'
@@ -493,9 +499,9 @@ def main():
             'source': 'youtube',
             'speaker': 'Jane Doe',
             'company': 'Data Inc',
-            'start_time': 45.0,
-            'end_time': 90.0,
-            'duration': 45.0,
+            'start_time': 45,
+            'end_time': 90,
+            'duration': 45,
             'subjects': ['AI', 'machine learning', 'innovation'],
             'download': 'https://example.com/video2',
             'text': 'Our AI initiatives are showing promising results in natural language processing.'
@@ -525,7 +531,7 @@ def main():
         print(f"Speaker: {result['speaker']} ({result['company']})")
         print(f"Date: {result['date']}")
         print(f"Source: {result['source']} (ID: {result['youtube_id']})")
-        print(f"Duration: {result['duration']:.1f}s ({result['start_time']:.1f}s - {result['end_time']:.1f}s)")
+        print(f"Duration: {result['duration']}s ({result['start_time']}s - {result['end_time']}s)")
         print(f"Subjects: {', '.join(result['subjects'])}")
         print(f"Text: {result['text']}")
         print(f"Similarity: {result['similarity']:.3f}")

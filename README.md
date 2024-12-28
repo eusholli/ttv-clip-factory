@@ -1,78 +1,218 @@
-# TelecomTV Clip Factory
+# Transcript Search System
 
-The TelecomTV Clip Factory is a powerful web application that enables users to search, preview, purchase, and download video clips from TelecomTV content. The application provides an intuitive interface for searching through video transcripts and finding specific moments in TelecomTV's video content.
+This system provides advanced semantic search capabilities for video transcripts, incorporating comprehensive text analysis including sentiment, emotion, technical complexity, and more.
 
-## Features
+## Prerequisites
 
-### Advanced Search Capabilities
-- **Transcript Search**: Search through video transcripts to find specific content
-- **Multiple Filters**: Refine your search using filters for:
-  - Speaker
-  - Date
-  - Title
-- **Adjustable Results**: Control the number of search results (1-20) displayed
+- Python 3.8+
+- PostgreSQL with pgvector extension
+- MPS-enabled device (for Apple Silicon) or CUDA-capable GPU (for NVIDIA)
 
-### Rich Preview Features
-- **Video Preview**: Watch the relevant clip directly in the interface
-- **Transcript Display**: Read the exact transcript text with highlighted search terms
-- **Metadata**: View detailed information including:
-  - Speaker name and company
-  - Precise timestamps
-  - Publication date
-  - Subject tags
+## Installation
 
-### Clip Purchase and Download
-- **Secure Payments**: Integrated Stripe payment system for clip purchases
-- **Session Management**: Access to purchased clips throughout your browser session
-- **Direct Downloads**: Immediate access to purchased clips in MP4 format
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd <repository-name>
+```
 
-## Using the Application
+2. Create and activate a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows, use: venv\Scripts\activate
+```
 
-1. **Search for Content**
-   - Enter your search terms in the search box
-   - Use the filter dropdowns to narrow results by speaker, date, or title
-   - Adjust the number of results to display
+3. Install required packages:
+```bash
+pip install -r requirements.txt
+```
 
-2. **Preview Content**
-   - Each result shows a video preview with the relevant segment
-   - Read the transcript text with highlighted search terms
-   - View associated metadata (speaker, company, timestamps, etc.)
+4. Install spaCy's large English model:
+```bash
+python -m spacy download en_core_web_lg
+```
 
-3. **Purchase and Download Clips**
-   - Click "Buy Now ($5)" on any clip you wish to purchase
-   - Complete the secure payment process through Stripe
-   - Download your purchased clip immediately
-   - Access your purchased clips throughout your current browser session
+## PostgreSQL Setup
 
-## Important Notes
+1. Install PostgreSQL and pgvector:
 
-- Purchased clips are only accessible during your current browser session
-- Make sure to download your clips before closing your browser
-- The application automatically creates preview segments with proper timestamps
-- Search results show a match percentage to help identify the most relevant content
+On macOS:
+```bash
+brew install postgresql
+brew services start postgresql
+```
 
-## Technical Details
+On Ubuntu:
+```bash
+sudo apt-get update
+sudo apt-get install postgresql postgresql-contrib
+sudo systemctl start postgresql
+```
 
-The application is built using:
-- Streamlit for the web interface
-- FAISS for efficient transcript search
-- Sentence transformers for semantic search capabilities
-- Stripe for payment processing
-- R2 storage for video clip management
+2. Install pgvector extension:
 
-## Best Practices
+On macOS:
+```bash
+brew install pgvector
+```
 
-1. **Searching**
-   - Use specific search terms for better results
-   - Combine filters to narrow down content
-   - Check the match percentage to identify the most relevant clips
+On Ubuntu:
+```bash
+sudo apt-get install postgresql-14-pgvector  # Replace 14 with your PostgreSQL version
+```
 
-2. **Purchasing**
-   - Download your clips immediately after purchase
-   - Keep your browser session open until you've downloaded all purchased clips
-   - Verify your clips after downloading
+3. Create the database and enable pgvector:
+```bash
+psql postgres
+CREATE DATABASE transcript_search;
+\c transcript_search
+CREATE EXTENSION vector;
+```
 
-3. **Viewing**
-   - Use the video preview to ensure the clip contains the content you need
-   - Read the transcript to confirm the context
-   - Check the timestamps to verify the clip length
+## Environment Configuration
+
+Create a `.env` file in the project root:
+```
+DATABASE_URL=postgresql://localhost/transcript_search
+OPENAI_API_KEY=your_openai_api_key  # If using OpenAI models
+```
+
+## Project Structure
+
+```
+.
+├── update_pg.py          # Database update and text analysis
+├── test-pg.py           # Search functionality
+├── requirements.txt     # Python dependencies
+└── .env                # Environment variables
+```
+
+## Usage
+
+1. Process transcripts and update the database:
+```bash
+python update_pg.py
+```
+
+2. Search for transcripts:
+```bash
+python test-pg.py "your search query here"
+```
+
+Example:
+```bash
+python test-pg.py "What are the best quotes about technology?"
+```
+
+## Requirements
+
+The following packages are required (included in requirements.txt):
+```
+playwright
+beautifulsoup4
+yt_dlp
+pytube
+moviepy
+requests
+streamlit
+sentence-transformers
+numpy
+pandas
+python-dotenv
+boto3
+botocore
+stripe
+backoff
+psycopg2-binary
+sqlalchemy
+pgvector
+langchain
+langchain-community
+anthropic
+textblob
+nltk
+transformers
+spacy
+```
+
+## Text Analysis Features
+
+The system performs comprehensive analysis on both stored transcripts and search queries:
+
+1. Basic Metadata
+   - Session title, date, speaker, company
+   - Duration calculation
+   - Subject tagging
+
+2. Sentiment and Emotion
+   - Sentiment analysis (positive/negative/neutral)
+   - Emotion detection (joy, sadness, anger, fear, surprise, neutral)
+
+3. Entity Analysis
+   - Subject extraction
+   - Object identification
+   - Location detection
+
+4. Content Analysis
+   - Topic classification with confidence scores
+   - Key phrase extraction
+   - Intent classification
+   - Technical complexity assessment
+   - Readability metrics (Flesch-Kincaid)
+   - Quote classification
+   - Stakeholder impact analysis
+   - Time reference extraction
+   - Claim detection
+
+## Database Schema
+
+The system uses PostgreSQL with the following schema:
+
+```sql
+CREATE TABLE transcripts (
+    segment_hash TEXT PRIMARY KEY,
+    title TEXT,
+    date TIMESTAMP,
+    youtube_id TEXT,
+    source TEXT,
+    speaker TEXT,
+    company TEXT,
+    start_time FLOAT,
+    end_time FLOAT,
+    subjects TEXT[],
+    download JSONB,
+    text TEXT,
+    embedding vector(384)
+);
+
+CREATE INDEX embedding_idx ON transcripts USING ivfflat (embedding vector_cosine_ops);
+```
+
+## Troubleshooting
+
+1. If you encounter CUDA/MPS errors:
+   - Ensure you have the correct version of PyTorch installed for your system
+   - For Apple Silicon: Use MPS backend
+   - For NVIDIA: Install appropriate CUDA toolkit
+
+2. Database connection issues:
+   - Verify PostgreSQL is running: `pg_isready`
+   - Check DATABASE_URL in .env
+   - Ensure pgvector extension is installed
+
+3. Memory issues:
+   - The spaCy model and transformers can use significant memory
+   - Consider using smaller models if needed
+   - Batch process large datasets
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a new Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
