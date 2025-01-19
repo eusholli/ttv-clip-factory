@@ -1,0 +1,67 @@
+import pysrt
+import re
+import json
+from datetime import datetime
+from typing import List, Dict, Optional, Union
+from bs4 import BeautifulSoup
+
+class TranscriptParser:
+    """Parser for interview transcripts that handles multiple formats"""
+    
+    def __init__(self, content: Union[str, dict]):
+        """
+        Initialize parser with transcript content
+        Args:
+            content: Either raw text, HTML string, or parsed JSON dict
+        """
+        if isinstance(content, dict):
+            self.raw_text = self._convert_json_to_text(content)
+        else:
+            # Clean HTML if present
+            self.raw_text = self._clean_html(content)
+            
+        # Standardize line endings and spacing
+        self.raw_text = self._standardize_format(self.raw_text)
+        self.srt_text = self._convert_to_srt(self.raw_text)
+        self.subtitles = pysrt.from_string(self.srt_text)
+        self.speakers = self._identify_speakers()
+
+    def _clean_html(self, text: str) -> str:
+        """Convert HTML formatted transcript to plain text"""
+        if '<br>' in text or '<p>' in text:
+            soup = BeautifulSoup(text, 'html.parser')
+            # Replace <br> and </p> with newlines
+            for br in soup.find_all(['br', 'p']):
+                br.replace_with('\n')
+            return soup.get_text()
+        return text
+
+    def _convert_json_to_text(self, json_content: dict) -> str:
+        """Convert JSON transcript format to text format"""
+        text_parts = []
+        for segment in json_content.get('transcript', []):
+            metadata = segment['metadata']
+            timestamp = f"{int(metadata['start_timestamp'] // 60):02d}:{int(metadata['start_timestamp'] % 60):02d}"
+            text_parts.append(
+                f"{metadata['speaker']}, {metadata['company']} ({timestamp}):\n{segment['text']}"
+            )
+        return '\n\n'.join(text_parts)
+
+    def _standardize_format(self, text: str) -> str:
+        """Standardize line endings and remove extra spaces"""
+        # Replace multiple newlines with double newline
+        text = re.sub(r'\n\s*\n', '\n\n', text)
+        # Remove extra spaces
+        text = re.sub(r' +', ' ', text)
+        # Clean up any extra whitespace around timestamps
+        text = re.sub(r'\(\s*(\d+:\d+)\s*\)', r'(\1)', text)
+        return text.strip()
+
+    # ... (rest of the methods remain the same as previous version)
+
+    def get_text_by_speaker(self, speaker_name: str, include_timestamps: bool = False) -> str:
+        """Get all text from a specific speaker as a continuous string"""
+        segments = self.get_speaker_segments(speaker_name)
+        if include_timestamps:
+            return '\n\n'.join(f"({seg['start_time']}) {seg['text']}" for seg in segments)
+        return '\n\n'.join(seg['text'] for seg in segments)

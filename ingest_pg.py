@@ -4,6 +4,7 @@ import json
 import os
 import traceback
 import backoff
+import zipfile
 from r2_manager import R2Manager
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
@@ -571,8 +572,70 @@ async def process_urls(urls: List[str], batch_size: int = 3, max_retries: int = 
             for url in failed_urls:
                 logger.error(f"Failed URL: {url}")
 
+async def process_zip_file(zip_path: Path) -> None:
+    """Process JSON files from a zip archive"""
+    import tempfile
+    import shutil
+    
+    # Create temporary directory
+    temp_dir = Path(tempfile.mkdtemp())
+    logger.info(f"Created temporary directory: {temp_dir}")
+    
+    try:
+        # Extract zip contents
+        logger.info(f"Extracting {zip_path} to temporary directory")
+        with zipfile.ZipFile(zip_path, 'r') as zipf:
+            zipf.extractall(temp_dir)
+        
+        # Process each JSON file
+        json_files = list(temp_dir.glob('*.json'))
+        logger.info(f"Found {len(json_files)} JSON files to process")
+        
+        processor = ContentProcessor(CACHE_DIR, CLIP_DIR)
+        for json_file in json_files:
+            try:
+                logger.info(f"Processing {json_file.name}")
+                with open(json_file, 'r') as f:
+                    json_data = json.load(f)
+                processor.process_transcript(json_data)
+                logger.info(f"Successfully processed {json_file.name}")
+            except Exception as e:
+                logger.error(f"Error processing {json_file.name}: {str(e)}")
+                continue
+    
+    except Exception as e:
+        logger.error(f"Error processing zip file: {str(e)}")
+        raise
+    
+    finally:
+        # Clean up temporary directory
+        try:
+            shutil.rmtree(temp_dir)
+            logger.info("Cleaned up temporary directory")
+        except Exception as e:
+            logger.error(f"Error cleaning up temporary directory: {str(e)}")
+
 async def main():
     """Main entry point"""
+    import sys
+    
+    # Check if zip file argument is provided
+    if len(sys.argv) > 1 and sys.argv[1].endswith('.zip'):
+        zip_path = Path(sys.argv[1])
+        if not zip_path.exists():
+            logger.error(f"Error: Zip file {zip_path} not found.")
+            return
+        
+        logger.info(f"Processing zip file: {zip_path}")
+        try:
+            await process_zip_file(zip_path)
+            logger.info("Zip file processing complete")
+            return
+        except Exception as e:
+            logger.error(f"Failed to process zip file: {str(e)}")
+            return
+    
+    # Default behavior - process URLs from file
     url_file = Path("dsp-urls-one.txt")
     if not url_file.exists():
         logger.error(f"Error: {url_file} not found.")
@@ -594,6 +657,13 @@ async def main():
     finally:
         total_time = time.time() - start_time
         logger.info(f"Processing complete in {total_time:.2f}s. Check logs for details.")
+        
+        # Create zip file of cache json files
+        import zipfile
+        with zipfile.ZipFile('urls.zip', 'w') as zipf:
+            for json_file in CACHE_DIR.glob('*.json'):
+                zipf.write(json_file, json_file.name)
+        logger.info("Created urls.zip with all cache JSON files")
         
         # Print summary
         processor = ContentProcessor(CACHE_DIR, CLIP_DIR)
